@@ -55,7 +55,11 @@ pub fn spawn_cave_tile_map(
                         index: variant,
                     },
                 ),
-                CaveTiles(CaveTileType::Wall),
+                CaveTiles(if tile_index < 8 {
+                    CaveTileType::Wall
+                } else {
+                    CaveTileType::Floor
+                }),
                 Transform {
                     translation: Vec3::new(x_position, y_position, 0.5),
                     scale: Vec3::splat(scale),
