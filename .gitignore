@@ -37,6 +37,7 @@ target/
 *.stdout
 
 .DS_Store
+src/.DS_Store
 Thumbs.db
 
 wasm_out/
