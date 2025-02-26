@@ -5,6 +5,7 @@ use tilemap::{configs::{SCREEN_HEIGHT, SCREEN_WIDTH}, CaveTileMapPlugin};
 mod camera;
 mod tilemap;
 mod player;
+mod animations;
 
 fn main() {
     App::new()
