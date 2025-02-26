@@ -6,8 +6,14 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, PlayerPlugin::spawn)
-            .add_systems(Update, (player_movement,animate_player, ));
+        app.add_systems(Startup, PlayerPlugin::spawn).add_systems(
+            Update,
+            (
+                player_movement,
+                animate_player_idle,
+                animate_player_movement,
+            ),
+        );
     }
 }
 
@@ -20,23 +26,33 @@ impl PlayerPlugin {
         let texture = asset_server.load("player_sprite_sheet.png");
         let layout = TextureAtlasLayout::from_grid(UVec2::splat(24), 6, 6, None, None);
         let texture_atlas_layout = texture_atlas_layouts.add(layout);
-        let animation_indices = PlayerAnimation { first: 6, last: 11 };
+        let player_animation_running = PlayerRunningAnimation(AnimateSprite {
+            first: 6,
+            last: 11,
+            timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+        });
+
+        let player_animation_idle = PlayerIdleAnimation(AnimateSprite {
+            first: 0,
+            last: 3,
+            timer: Timer::from_seconds(0.35, TimerMode::Repeating),
+        });
         commands.spawn((
             Sprite::from_atlas_image(
                 texture,
                 TextureAtlas {
                     layout: texture_atlas_layout,
-                    index: animation_indices.first,
+                    index: player_animation_idle.first,
                 },
             ),
-            PlayerAnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
             Player { speed: 250.0 },
             Transform {
                 translation: Vec3::new(-55.0, -55.0, 1.0),
                 scale: Vec3::splat(2.0),
                 ..default()
             },
-            animation_indices,
+            player_animation_running,
+            player_animation_idle,
         ));
     }
 }
@@ -47,25 +63,60 @@ pub struct Player {
 }
 
 #[derive(Component)]
-pub struct PlayerAnimation {
+pub struct AnimateSprite {
     pub first: usize,
     pub last: usize,
+    pub timer: Timer,
 }
 
 #[derive(Component, Deref, DerefMut)]
-struct PlayerAnimationTimer(Timer);
+pub struct PlayerRunningAnimation(AnimateSprite);
 
-fn animate_player(
+#[derive(Component, Deref, DerefMut)]
+pub struct PlayerIdleAnimation(AnimateSprite);
+
+pub fn animate_player_movement(
     time: Res<Time>,
-    mut query: Query<(&PlayerAnimation, &mut PlayerAnimationTimer, &mut Sprite)>,
+    mut player_animation_query: Query<(&mut PlayerRunningAnimation, &mut Sprite)>,
+    input: Res<ButtonInput<KeyCode>>,
 ) {
-    for (indices, mut timer, mut sprite) in &mut query {
-        timer.tick(time.delta());
+    if let Ok((mut player_animation, mut sprite)) = player_animation_query.get_single_mut() {
+        if input.pressed(KeyCode::KeyW)
+            || input.pressed(KeyCode::KeyA)
+            || input.pressed(KeyCode::KeyD)
+            || input.pressed(KeyCode::KeyS)
+        {
+            player_animation.timer.tick(time.delta());
 
-        if timer.just_finished() {
+            if player_animation.timer.just_finished() {
+                if let Some(atlas) = &mut sprite.texture_atlas {
+                    atlas.index = if atlas.index < 6
+                        || atlas.index > 11
+                        || atlas.index == player_animation.last
+                    {
+                        player_animation.first
+                    } else if atlas.index < 11 && atlas.index >= 6 {
+                        atlas.index + 1
+                    } else {
+                        atlas.index
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn animate_player_idle(
+    time: Res<Time>,
+    mut player_animation_query: Query<(&mut PlayerIdleAnimation, &mut Sprite)>,
+) {
+    if let Ok((mut player_animation, mut sprite)) = player_animation_query.get_single_mut() {
+        player_animation.timer.tick(time.delta());
+
+        if player_animation.timer.just_finished() {
             if let Some(atlas) = &mut sprite.texture_atlas {
-                atlas.index = if atlas.index == indices.last {
-                    indices.first
+                atlas.index = if atlas.index > 4 || atlas.index == player_animation.last {
+                    player_animation.first
                 } else {
                     atlas.index + 1
                 };
@@ -81,7 +132,6 @@ pub enum ColliderDirection {
     Left,
     Right,
 }
-
 
 pub fn player_movement(
     mut players: Query<(&mut Transform, &Player), Without<Collider>>,
