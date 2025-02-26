@@ -46,7 +46,7 @@ pub fn spawn_player(
         ),
         Player { speed: 250.0 },
         Transform {
-            translation: Vec3::new(-55.0, -55.0, 1.0),
+            translation: Vec3::new(100.0, -150.0, 1.0),
             scale: Vec3::splat(2.0),
             ..default()
         },
