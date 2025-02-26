@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::animations::{animate_orcs, OrcsAnimation};
+
 use super::Enemy;
 
 // define plugin
@@ -8,7 +10,7 @@ pub struct OrcsPlugin;
 impl Plugin for OrcsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_orcs)
-            .add_systems(Update, attack);
+            .add_systems(Update, (animate_orcs, attack));
     }
 }
 
@@ -43,14 +45,14 @@ pub fn spawn_orcs(
     let texture = asset_server.load("enemies/orcs/orc_idle.png");
     let layout = TextureAtlasLayout::from_grid(UVec2::new(48, 32), 6, 1, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
-
+    let orcs_animation = OrcsAnimation::default();
     for i in 0..SPAWN_AMOUNT {
         commands.spawn((
             Sprite::from_atlas_image(
                 texture.clone(),
                 TextureAtlas {
                     layout: texture_atlas_layout.clone(),
-                    index: 0,
+                    index: orcs_animation.idle.first,
                 },
             ),
             Transform {
@@ -60,6 +62,7 @@ pub fn spawn_orcs(
             },
             Orcs::default(),
             Enemy,
+            orcs_animation.clone(),
         ));
     }
 }
