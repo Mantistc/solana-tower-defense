@@ -1,114 +1,21 @@
 use bevy::prelude::*;
 
-use crate::tilemap::{Collider, COLLISION_THRESHOLD};
+use crate::{
+    animations::{animate_player, PlayerAnimations},
+    tilemap::{Collider, COLLISION_THRESHOLD},
+};
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, PlayerPlugin::spawn)
+        app.add_systems(Startup, spawn_player)
             .add_systems(Update, (player_movement, animate_player));
     }
 }
-
-impl PlayerPlugin {
-    pub fn spawn(
-        mut commands: Commands,
-        asset_server: Res<AssetServer>,
-        mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-    ) {
-        let texture = asset_server.load("player_sprite_sheet.png");
-        let layout = TextureAtlasLayout::from_grid(UVec2::splat(24), 6, 6, None, None);
-        let texture_atlas_layout = texture_atlas_layouts.add(layout);
-
-        let player_animations = PlayerAnimations {
-            running: AnimateSprite {
-                first: 6,
-                last: 11,
-                timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-            },
-            idle: AnimateSprite {
-                first: 0,
-                last: 3,
-                timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-            },
-        };
-
-        commands.spawn((
-            Sprite::from_atlas_image(
-                texture,
-                TextureAtlas {
-                    layout: texture_atlas_layout,
-                    index: player_animations.idle.first,
-                },
-            ),
-            Player { speed: 250.0 },
-            Transform {
-                translation: Vec3::new(-55.0, -55.0, 1.0),
-                scale: Vec3::splat(2.0),
-                ..default()
-            },
-            player_animations,
-            PlayerState::Idle,
-        ));
-    }
-}
-
 #[derive(Component)]
 pub struct Player {
     pub speed: f32,
-}
-
-#[derive(Component)]
-pub struct AnimateSprite {
-    pub first: usize,
-    pub last: usize,
-    pub timer: Timer,
-}
-
-#[derive(Component)]
-pub struct PlayerAnimations {
-    pub running: AnimateSprite,
-    pub idle: AnimateSprite,
-}
-
-#[derive(Component, PartialEq, Eq)]
-pub enum PlayerState {
-    Idle,
-    Running,
-}
-
-pub fn animate_player(
-    time: Res<Time>,
-    input: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(&mut Sprite, &mut PlayerAnimations, &mut PlayerState)>,
-) {
-    if let Ok((mut sprite, mut animations, mut state)) = query.get_single_mut() {
-        let moving = input.pressed(KeyCode::KeyW)
-            || input.pressed(KeyCode::KeyA)
-            || input.pressed(KeyCode::KeyD)
-            || input.pressed(KeyCode::KeyS);
-
-        let animation = if moving {
-            *state = PlayerState::Running;
-            &mut animations.running
-        } else {
-            *state = PlayerState::Idle;
-            &mut animations.idle
-        };
-
-        animation.timer.tick(time.delta());
-
-        if animation.timer.just_finished() {
-            if let Some(atlas) = &mut sprite.texture_atlas {
-                atlas.index = if atlas.index < animation.first || atlas.index >= animation.last {
-                    animation.first
-                } else {
-                    atlas.index + 1
-                };
-            };
-        }
-    }
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -117,6 +24,34 @@ pub enum ColliderDirection {
     Bottom,
     Left,
     Right,
+}
+
+pub fn spawn_player(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let texture = asset_server.load("player_sprite_sheet.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(24), 6, 6, None, None);
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+    let player_animations = PlayerAnimations::default();
+
+    commands.spawn((
+        Sprite::from_atlas_image(
+            texture,
+            TextureAtlas {
+                layout: texture_atlas_layout,
+                index: player_animations.idle.first,
+            },
+        ),
+        Player { speed: 250.0 },
+        Transform {
+            translation: Vec3::new(-55.0, -55.0, 1.0),
+            scale: Vec3::splat(2.0),
+            ..default()
+        },
+        player_animations,
+    ));
 }
 
 pub fn player_movement(
