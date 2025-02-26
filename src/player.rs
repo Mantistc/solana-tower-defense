@@ -6,14 +6,8 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, PlayerPlugin::spawn).add_systems(
-            Update,
-            (
-                player_movement,
-                animate_player_idle,
-                animate_player_movement,
-            ),
-        );
+        app.add_systems(Startup, PlayerPlugin::spawn)
+            .add_systems(Update, (player_movement, animate_player));
     }
 }
 
@@ -26,23 +20,26 @@ impl PlayerPlugin {
         let texture = asset_server.load("player_sprite_sheet.png");
         let layout = TextureAtlasLayout::from_grid(UVec2::splat(24), 6, 6, None, None);
         let texture_atlas_layout = texture_atlas_layouts.add(layout);
-        let player_animation_running = PlayerRunningAnimation(AnimateSprite {
-            first: 6,
-            last: 11,
-            timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-        });
 
-        let player_animation_idle = PlayerIdleAnimation(AnimateSprite {
-            first: 0,
-            last: 3,
-            timer: Timer::from_seconds(0.35, TimerMode::Repeating),
-        });
+        let player_animations = PlayerAnimations {
+            running: AnimateSprite {
+                first: 6,
+                last: 11,
+                timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+            },
+            idle: AnimateSprite {
+                first: 0,
+                last: 3,
+                timer: Timer::from_seconds(0.25, TimerMode::Repeating),
+            },
+        };
+
         commands.spawn((
             Sprite::from_atlas_image(
                 texture,
                 TextureAtlas {
                     layout: texture_atlas_layout,
-                    index: player_animation_idle.first,
+                    index: player_animations.idle.first,
                 },
             ),
             Player { speed: 250.0 },
@@ -51,8 +48,8 @@ impl PlayerPlugin {
                 scale: Vec3::splat(2.0),
                 ..default()
             },
-            player_animation_running,
-            player_animation_idle,
+            player_animations,
+            PlayerState::Idle,
         ));
     }
 }
@@ -69,58 +66,47 @@ pub struct AnimateSprite {
     pub timer: Timer,
 }
 
-#[derive(Component, Deref, DerefMut)]
-pub struct PlayerRunningAnimation(AnimateSprite);
-
-#[derive(Component, Deref, DerefMut)]
-pub struct PlayerIdleAnimation(AnimateSprite);
-
-pub fn animate_player_movement(
-    time: Res<Time>,
-    mut player_animation_query: Query<(&mut PlayerRunningAnimation, &mut Sprite)>,
-    input: Res<ButtonInput<KeyCode>>,
-) {
-    if let Ok((mut player_animation, mut sprite)) = player_animation_query.get_single_mut() {
-        if input.pressed(KeyCode::KeyW)
-            || input.pressed(KeyCode::KeyA)
-            || input.pressed(KeyCode::KeyD)
-            || input.pressed(KeyCode::KeyS)
-        {
-            player_animation.timer.tick(time.delta());
-
-            if player_animation.timer.just_finished() {
-                if let Some(atlas) = &mut sprite.texture_atlas {
-                    atlas.index = if atlas.index < 6
-                        || atlas.index > 11
-                        || atlas.index == player_animation.last
-                    {
-                        player_animation.first
-                    } else if atlas.index < 11 && atlas.index >= 6 {
-                        atlas.index + 1
-                    } else {
-                        atlas.index
-                    }
-                }
-            }
-        }
-    }
+#[derive(Component)]
+pub struct PlayerAnimations {
+    pub running: AnimateSprite,
+    pub idle: AnimateSprite,
 }
 
-pub fn animate_player_idle(
-    time: Res<Time>,
-    mut player_animation_query: Query<(&mut PlayerIdleAnimation, &mut Sprite)>,
-) {
-    if let Ok((mut player_animation, mut sprite)) = player_animation_query.get_single_mut() {
-        player_animation.timer.tick(time.delta());
+#[derive(Component, PartialEq, Eq)]
+pub enum PlayerState {
+    Idle,
+    Running,
+}
 
-        if player_animation.timer.just_finished() {
+pub fn animate_player(
+    time: Res<Time>,
+    input: Res<ButtonInput<KeyCode>>,
+    mut query: Query<(&mut Sprite, &mut PlayerAnimations, &mut PlayerState)>,
+) {
+    if let Ok((mut sprite, mut animations, mut state)) = query.get_single_mut() {
+        let moving = input.pressed(KeyCode::KeyW)
+            || input.pressed(KeyCode::KeyA)
+            || input.pressed(KeyCode::KeyD)
+            || input.pressed(KeyCode::KeyS);
+
+        let animation = if moving {
+            *state = PlayerState::Running;
+            &mut animations.running
+        } else {
+            *state = PlayerState::Idle;
+            &mut animations.idle
+        };
+
+        animation.timer.tick(time.delta());
+
+        if animation.timer.just_finished() {
             if let Some(atlas) = &mut sprite.texture_atlas {
-                atlas.index = if atlas.index > 4 || atlas.index == player_animation.last {
-                    player_animation.first
+                atlas.index = if atlas.index < animation.first || atlas.index >= animation.last {
+                    animation.first
                 } else {
                     atlas.index + 1
                 };
-            }
+            };
         }
     }
 }
