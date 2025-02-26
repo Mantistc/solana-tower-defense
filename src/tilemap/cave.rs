@@ -25,7 +25,7 @@ pub fn spawn_cave_tile_map(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let texture = asset_server.load("tilemap_sprite_sheet.png");
+    let texture = asset_server.load("tilemaps/tilemap_sprite_sheet.png");
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(16), 2, 5, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
 
@@ -36,7 +36,7 @@ pub fn spawn_cave_tile_map(
     let mut rng = rand::rng();
 
     // define tile indices, last ones represent floor
-    let tile_indices = vec![0, 2, 4, 6, 8, 8, 8, 8, 8, 8];
+    let tile_indices = vec![0, 4, 6, 8, 8, 8, 8, 8, 8];
 
     for x in 0..cave_width {
         let x_position = tile_size * x as f32;

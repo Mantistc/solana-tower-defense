@@ -31,7 +31,7 @@ pub fn spawn_player(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let texture = asset_server.load("player_sprite_sheet.png");
+    let texture = asset_server.load("player/player_sprite_sheet.png");
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(24), 6, 6, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
     let player_animations = PlayerAnimations::default();
