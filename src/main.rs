@@ -1,18 +1,25 @@
 use bevy::{app::PluginGroupBuilder, prelude::*};
 use camera::CameraPlugin;
+use enemies::EnemiesPlugins;
 use player::PlayerPlugin;
-use tilemap::{configs::{SCREEN_HEIGHT, SCREEN_WIDTH}, CaveTileMapPlugin};
-mod camera;
-mod tilemap;
-mod player;
+use tilemap::{
+    configs::{SCREEN_HEIGHT, SCREEN_WIDTH},
+    CaveTileMapPlugin,
+};
 mod animations;
+mod camera;
+mod enemies;
+mod player;
+mod tilemap;
 
 fn main() {
     App::new()
         .add_plugins(default_pluggins())
-        // tilemap plugins
         .add_plugins((CameraPlugin, PlayerPlugin))
+        // tilemap plugins
         .add_plugins(CaveTileMapPlugin)
+        // enemies plugin
+        .add_plugins(EnemiesPlugins)
         // world inspector plugin to check/change and test stuff in runtime
         // .add_plugins(
         //     WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Space)),
