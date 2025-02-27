@@ -13,7 +13,7 @@ pub struct OrcsPlugin;
 impl Plugin for OrcsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_orcs)
-            .add_systems(Update, (animate_orcs, follow_player_and_attack));
+            .add_systems(Update, (animate_orcs, follow_player, separate_orcs));
     }
 }
 
@@ -74,45 +74,26 @@ pub fn spawn_orcs(
 pub fn attack() {}
 
 const MAX_AGRO_DISTANCE: f32 = 250.0;
-const ATTACK_DISTANCE: f32 = 50.0;
-const MIN_ORC_SEPARATION: f32 = 25.0;
-const SEPARATION_STRENGTH: f32 = 2.0;
+const ATTACK_DISTANCE: f32 = 45.0;
+const MIN_ORC_SEPARATION: f32 = 45.0;
+const SEPARATION_STRENGTH: f32 = 5.0;
 
-pub fn follow_player_and_attack(
+pub fn follow_player(
     player: Query<&Transform, With<Player>>,
     mut orcs: Query<(&mut Transform, &Orcs, &mut OrcsAnimation), Without<Player>>,
     time: Res<Time>,
 ) {
     if let Ok(player_transform) = player.get_single() {
         let player_position = player_transform.translation.truncate();
-
-        let orcs_positions: Vec<Vec2> = orcs
-            .iter()
-            .map(|(transform, _, _)| transform.translation.truncate())
-            .collect();
-
-        for (i, (mut orc_transform, orcs, mut orcs_animation)) in orcs.iter_mut().enumerate() {
+        for (mut orc_transform, orcs, mut orcs_animation) in &mut orcs {
             let orc_position = orc_transform.translation.truncate();
-            let mut direction = (player_position - orc_position).normalize_or_zero();
+            let direction = (player_position - orc_position).normalize_or_zero();
             let distance = orc_position.distance(player_position);
-
-            for (j, other_position) in orcs_positions.iter().enumerate() {
-                if i != j {
-                    let distance = orc_position.distance(*other_position);
-                    if distance < MIN_ORC_SEPARATION {
-                        // calculate repelling force away from other orcs
-                        let repel_force = (orc_position - *other_position).normalize_or_zero();
-                        direction += repel_force * SEPARATION_STRENGTH;
-                    }
-                }
-            }
 
             if distance <= MAX_AGRO_DISTANCE && distance > ATTACK_DISTANCE {
                 orcs_animation.state = OrcsAnimationState::Walk;
                 let orcs_speed = orcs.speed * time.delta_secs();
-                orc_transform.translation.x += direction.x * orcs_speed;
-                orc_transform.translation.y += direction.y * orcs_speed;
-
+                orc_transform.translation += direction.extend(0.0) * orcs_speed;
                 if direction.x < 0.0 {
                     orc_transform.scale.x = -2.0;
                 } else if direction.x > 0.0 {
@@ -123,6 +104,55 @@ pub fn follow_player_and_attack(
             } else {
                 orcs_animation.state = OrcsAnimationState::Idle;
             }
+        }
+    }
+}
+
+pub fn separate_orcs(
+    player: Query<&Transform, With<Player>>,
+    mut orcs: Query<&mut Transform, (Without<Player>, With<Orcs>)>,
+    time: Res<Time>,
+) {
+    if let Ok(player_transform) = player.get_single() {
+        let player_position = player_transform.translation.truncate();
+
+        let orcs_positions: Vec<Vec2> = orcs
+            .iter()
+            .map(|transform| transform.translation.truncate())
+            .collect();
+
+        for (i, mut orc_transform) in orcs.iter_mut().enumerate() {
+            let orc_position = orc_transform.translation.truncate();
+            let mut direction = (player_position - orc_position).normalize_or_zero();
+
+            for (j, other_position) in orcs_positions.iter().enumerate() {
+                if i != j {
+                    let distance_to_other = orc_position.distance(*other_position);
+
+                    if distance_to_other < MIN_ORC_SEPARATION {
+                        // calculate repelling force
+                        let repel_force = (orc_position - *other_position).normalize_or_zero();
+
+                        // calculate perpendicular (tangential) vector to move around instead of back
+                        let tangential_force = Vec2::new(-repel_force.y, repel_force.x);
+
+                        // decide whether to move clockwise or counter-clockwise based on player position
+                        let player_dir = (player_position - orc_position).normalize_or_zero();
+                        let dot = player_dir.dot(tangential_force);
+
+                        let avoidance_direction = if dot > 0.0 {
+                            tangential_force
+                        } else {
+                            -tangential_force
+                        };
+
+                        // apply blended repulsion + avoidance direction
+                        direction +=
+                            (repel_force + avoidance_direction * 0.5) * SEPARATION_STRENGTH;
+                    }
+                }
+            }
+            orc_transform.translation += direction.extend(0.0) * time.delta_secs();
         }
     }
 }
