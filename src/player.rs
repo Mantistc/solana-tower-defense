@@ -16,10 +16,20 @@ impl Plugin for PlayerPlugin {
 #[derive(Component)]
 pub struct Player {
     pub speed: f32,
+    pub life: u8,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            speed: 250.0,
+            life: 100,
+        }
+    }
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
-pub enum ColliderDirection {
+pub enum MovementDirection {
     Top,
     Bottom,
     Left,
@@ -44,7 +54,7 @@ pub fn spawn_player(
                 index: player_animations.idle.first,
             },
         ),
-        Player { speed: 250.0 },
+        Player::default(),
         Transform {
             translation: Vec3::new(100.0, -150.0, 1.0),
             scale: Vec3::splat(2.0),
@@ -65,7 +75,7 @@ pub fn player_movement(
         if input.pressed(KeyCode::KeyW) {
             if !collision(
                 transform.translation,
-                ColliderDirection::Top,
+                MovementDirection::Top,
                 &colliders,
                 movement_size,
             ) {
@@ -75,7 +85,7 @@ pub fn player_movement(
         if input.pressed(KeyCode::KeyS) {
             if !collision(
                 transform.translation,
-                ColliderDirection::Bottom,
+                MovementDirection::Bottom,
                 &colliders,
                 movement_size,
             ) {
@@ -85,7 +95,7 @@ pub fn player_movement(
         if input.pressed(KeyCode::KeyA) {
             if !collision(
                 transform.translation,
-                ColliderDirection::Left,
+                MovementDirection::Left,
                 &colliders,
                 movement_size,
             ) {
@@ -96,7 +106,7 @@ pub fn player_movement(
         if input.pressed(KeyCode::KeyD) {
             if !collision(
                 transform.translation,
-                ColliderDirection::Right,
+                MovementDirection::Right,
                 &colliders,
                 movement_size,
             ) {
@@ -109,15 +119,15 @@ pub fn player_movement(
 
 fn collision(
     player_translation: Vec3,
-    collider_direction: ColliderDirection,
+    collider_direction: MovementDirection,
     colliders: &Query<&Transform, With<Collider>>,
     movement_size: f32,
 ) -> bool {
     let new_position = match collider_direction {
-        ColliderDirection::Top => player_translation + Vec3::new(0.0, movement_size, 0.0),
-        ColliderDirection::Bottom => player_translation + Vec3::new(0.0, -movement_size, 0.0),
-        ColliderDirection::Left => player_translation + Vec3::new(-movement_size, 0.0, 0.0),
-        ColliderDirection::Right => player_translation + Vec3::new(movement_size, 0.0, 0.0),
+        MovementDirection::Top => player_translation + Vec3::new(0.0, movement_size, 0.0),
+        MovementDirection::Bottom => player_translation + Vec3::new(0.0, -movement_size, 0.0),
+        MovementDirection::Left => player_translation + Vec3::new(-movement_size, 0.0, 0.0),
+        MovementDirection::Right => player_translation + Vec3::new(movement_size, 0.0, 0.0),
     };
 
     for collider_transform in colliders.iter() {

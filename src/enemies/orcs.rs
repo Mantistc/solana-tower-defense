@@ -13,7 +13,7 @@ pub struct OrcsPlugin;
 impl Plugin for OrcsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_orcs)
-            .add_systems(Update, (animate_orcs, follow_player, attack));
+            .add_systems(Update, (animate_orcs, follow_player_and_attack));
     }
 }
 
@@ -32,7 +32,7 @@ impl Default for Orcs {
         Self {
             life: 100,
             attack_damage: 10,
-            speed: 65.0,
+            speed: 125.0,
             attack_cooldown: Timer::from_seconds(1.5, TimerMode::Repeating),
         }
     }
@@ -73,9 +73,10 @@ pub fn spawn_orcs(
 
 pub fn attack() {}
 
-const MAX_AGRO_DISTANCE: f32 = 25.0;
+const MAX_AGRO_DISTANCE: f32 = 180.0;
+const ATTACK_DISTANCE: f32 = 50.0;
 
-pub fn follow_player(
+pub fn follow_player_and_attack(
     player: Query<&Transform, With<Player>>,
     mut orcs: Query<(&mut Transform, &Orcs, &mut OrcsAnimation), Without<Player>>,
     time: Res<Time>,
@@ -88,7 +89,7 @@ pub fn follow_player(
             let direction = (player_position - orc_position).normalize_or_zero();
             let distance = orc_position.distance(player_position);
 
-            if distance < MAX_AGRO_DISTANCE {
+            if distance <= MAX_AGRO_DISTANCE && distance > ATTACK_DISTANCE {
                 orcs_animation.state = OrcsAnimationState::Walk;
                 let orcs_speed = orcs.speed * time.delta_secs();
                 orc_transform.translation.x += direction.x * orcs_speed;
@@ -99,6 +100,8 @@ pub fn follow_player(
                 } else if direction.x > 0.0 {
                     orc_transform.scale.x = 2.0;
                 }
+            } else if distance <= ATTACK_DISTANCE {
+                orcs_animation.state = OrcsAnimationState::Attack;
             } else {
                 orcs_animation.state = OrcsAnimationState::Idle;
             }
