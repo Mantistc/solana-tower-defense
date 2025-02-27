@@ -15,11 +15,13 @@ impl Default for PlayerAnimations {
                 first: 6,
                 last: 11,
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                sprite_texture_atlas: None,
             },
             idle: AnimateSprite {
                 first: 0,
                 last: 3,
                 timer: Timer::from_seconds(0.25, TimerMode::Repeating),
+                sprite_texture_atlas: None,
             },
         }
     }
