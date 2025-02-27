@@ -42,28 +42,22 @@ impl Default for Orcs {
 const SPAWN_AMOUNT: u8 = 10;
 pub fn spawn_orcs(
     mut commands: Commands,
-    ref asset_server: Res<AssetServer>,
-    ref mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let orcs_animation = OrcsAnimation::set(asset_server, texture_atlas_layouts);
+    let texture = asset_server.load("enemies/orcs/orc_sprite_sheet.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2::splat(48), 8, 6, None, None);
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+    let orcs_animation = OrcsAnimation::default();
 
     for i in 0..SPAWN_AMOUNT {
         commands.spawn((
             Sprite::from_atlas_image(
-                orcs_animation
-                    .idle
-                    .sprite_texture_atlas
-                    .as_deref()
-                    .expect("Initializing...")
-                    .1
-                    .clone(),
-                orcs_animation
-                    .idle
-                    .sprite_texture_atlas
-                    .as_deref()
-                    .expect("Initializing...")
-                    .0
-                    .clone(),
+                texture.clone(),
+                TextureAtlas {
+                    layout: texture_atlas_layout.clone(),
+                    index: orcs_animation.idle.first,
+                },
             ),
             Transform {
                 translation: Vec3::new(150.0 * i as f32, -125.0, 1.0),
@@ -93,11 +87,18 @@ pub fn follow_player(
             let orc_position = orc_transform.translation.truncate();
             let direction = (player_position - orc_position).normalize_or_zero();
             let distance = orc_position.distance(player_position);
+
             if distance < MAX_AGRO_DISTANCE {
                 orcs_animation.state = OrcsAnimationState::Walk;
                 let orcs_speed = orcs.speed * time.delta_secs();
                 orc_transform.translation.x += direction.x * orcs_speed;
                 orc_transform.translation.y += direction.y * orcs_speed;
+
+                if direction.x < 0.0 {
+                    orc_transform.scale.x = -2.0;
+                } else if direction.x > 0.0 {
+                    orc_transform.scale.x = 2.0;
+                }
             } else {
                 orcs_animation.state = OrcsAnimationState::Idle;
             }
