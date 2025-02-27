@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::AnimateSprite;
+use super::{set_texture_atlas, AnimateSprite};
 
 #[derive(Component, Clone)]
 pub struct OrcsAnimation {
@@ -19,28 +19,67 @@ pub enum OrcsAnimationState {
     Death,
 }
 
-impl Default for OrcsAnimation {
-    fn default() -> Self {
+impl OrcsAnimation {
+    pub fn set(
+        asset_server: &Res<'_, AssetServer>,
+        texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
+    ) -> Self {
         Self {
             walk: AnimateSprite {
                 first: 0,
                 last: 7,
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                sprite_texture_atlas: Some(set_texture_atlas(
+                    asset_server,
+                    texture_atlas_layouts,
+                    "enemies/orcs/orc_walk.png",
+                    UVec2::new(48, 32),
+                    6,
+                    1,
+                    0,
+                )),
             },
             idle: AnimateSprite {
                 first: 0,
                 last: 4,
                 timer: Timer::from_seconds(0.25, TimerMode::Repeating),
+                sprite_texture_atlas: Some(set_texture_atlas(
+                    asset_server,
+                    texture_atlas_layouts,
+                    "enemies/orcs/orc_idle.png",
+                    UVec2::new(48, 32),
+                    4,
+                    1,
+                    0,
+                )),
             },
             attack: AnimateSprite {
                 first: 0,
                 last: 6,
                 timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                sprite_texture_atlas: Some(set_texture_atlas(
+                    asset_server,
+                    texture_atlas_layouts,
+                    "enemies/orcs/orc_attack_01.png",
+                    UVec2::new(48, 32),
+                    6,
+                    1,
+                    0,
+                )),
             },
             death: AnimateSprite {
                 first: 0,
                 last: 4,
                 timer: Timer::from_seconds(0.25, TimerMode::Repeating),
+                sprite_texture_atlas: Some(set_texture_atlas(
+                    asset_server,
+                    texture_atlas_layouts,
+                    "enemies/orcs/orc_death.png",
+                    UVec2::new(48, 32),
+                    4,
+                    1,
+                    0,
+                )),
             },
             state: OrcsAnimationState::Idle,
         }
