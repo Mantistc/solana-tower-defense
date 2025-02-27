@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::{
     animations::{animate_orcs, OrcsAnimation, OrcsAnimationState},
     player::Player,
+    tilemap::{Collider, COLLISION_THRESHOLD},
 };
 
 use super::Enemy;
@@ -12,8 +13,10 @@ pub struct OrcsPlugin;
 
 impl Plugin for OrcsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_orcs)
-            .add_systems(Update, (animate_orcs, follow_player, separate_orcs));
+        app.add_systems(Startup, spawn_orcs).add_systems(
+            Update,
+            (animate_orcs, follow_player, separate_orcs, avoid_colliders),
+        );
     }
 }
 
@@ -31,9 +34,9 @@ impl Default for Orcs {
     fn default() -> Self {
         Self {
             life: 100,
-            attack_damage: 10,
+            attack_damage: 4,
             speed: 125.0,
-            attack_cooldown: Timer::from_seconds(1.5, TimerMode::Repeating),
+            attack_cooldown: Timer::from_seconds(0.5, TimerMode::Repeating),
         }
     }
 }
@@ -153,6 +156,24 @@ pub fn separate_orcs(
                 }
             }
             orc_transform.translation += direction.extend(0.0) * time.delta_secs();
+        }
+    }
+}
+
+pub fn avoid_colliders(
+    mut orcs: Query<&mut Transform, (Without<Collider>, With<Orcs>)>,
+    colliders: Query<&Transform, With<Collider>>,
+) {
+    let collider_positions: Vec<Vec2> =
+        colliders.iter().map(|t| t.translation.truncate()).collect();
+    for mut orc_transform in &mut orcs {
+        let orc_position = orc_transform.translation.truncate();
+        for collider_position in &collider_positions {
+            let distance = orc_position.distance_squared(*collider_position);
+            if distance < COLLISION_THRESHOLD {
+                let direction = (orc_position - collider_position).normalize_or_zero();
+                orc_transform.translation += direction.extend(0.0) + SEPARATION_STRENGTH;
+            }
         }
     }
 }

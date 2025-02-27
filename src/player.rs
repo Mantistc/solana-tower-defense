@@ -124,10 +124,18 @@ fn collision(
     movement_size: f32,
 ) -> bool {
     let new_position = match collider_direction {
-        MovementDirection::Top => player_translation + Vec3::new(0.0, movement_size, 0.0),
-        MovementDirection::Bottom => player_translation + Vec3::new(0.0, -movement_size, 0.0),
-        MovementDirection::Left => player_translation + Vec3::new(-movement_size, 0.0, 0.0),
-        MovementDirection::Right => player_translation + Vec3::new(movement_size, 0.0, 0.0),
+        MovementDirection::Top => {
+            player_translation + Vec3::new(0.0, movement_size, player_translation.z)
+        }
+        MovementDirection::Bottom => {
+            player_translation + Vec3::new(0.0, -movement_size, player_translation.z)
+        }
+        MovementDirection::Left => {
+            player_translation + Vec3::new(-movement_size, 0.0, player_translation.z)
+        }
+        MovementDirection::Right => {
+            player_translation + Vec3::new(movement_size, 0.0, player_translation.z)
+        }
     };
 
     for collider_transform in colliders.iter() {
