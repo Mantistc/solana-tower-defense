@@ -73,8 +73,10 @@ pub fn spawn_orcs(
 
 pub fn attack() {}
 
-const MAX_AGRO_DISTANCE: f32 = 180.0;
+const MAX_AGRO_DISTANCE: f32 = 250.0;
 const ATTACK_DISTANCE: f32 = 50.0;
+const MIN_ORC_SEPARATION: f32 = 25.0;
+const SEPARATION_STRENGTH: f32 = 2.0;
 
 pub fn follow_player_and_attack(
     player: Query<&Transform, With<Player>>,
@@ -84,10 +86,26 @@ pub fn follow_player_and_attack(
     if let Ok(player_transform) = player.get_single() {
         let player_position = player_transform.translation.truncate();
 
-        for (mut orc_transform, orcs, mut orcs_animation) in &mut orcs {
+        let orcs_positions: Vec<Vec2> = orcs
+            .iter()
+            .map(|(transform, _, _)| transform.translation.truncate())
+            .collect();
+
+        for (i, (mut orc_transform, orcs, mut orcs_animation)) in orcs.iter_mut().enumerate() {
             let orc_position = orc_transform.translation.truncate();
-            let direction = (player_position - orc_position).normalize_or_zero();
+            let mut direction = (player_position - orc_position).normalize_or_zero();
             let distance = orc_position.distance(player_position);
+
+            for (j, other_position) in orcs_positions.iter().enumerate() {
+                if i != j {
+                    let distance = orc_position.distance(*other_position);
+                    if distance < MIN_ORC_SEPARATION {
+                        // calculate repelling force away from other orcs
+                        let repel_force = (orc_position - *other_position).normalize_or_zero();
+                        direction += repel_force * SEPARATION_STRENGTH;
+                    }
+                }
+            }
 
             if distance <= MAX_AGRO_DISTANCE && distance > ATTACK_DISTANCE {
                 orcs_animation.state = OrcsAnimationState::Walk;
