@@ -11,12 +11,15 @@ impl Plugin for TowerDefenseTilemapPlugin {
 
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let map_handle: Handle<TiledMap> = asset_server.load("tilemaps/tower_defense_tilemap.tmx");
-
-    // Spawn the map with default options
+    commands.spawn((Camera2d::default(),));
     commands.spawn((
         TiledMapHandle(map_handle),
         TiledMapSettings {
             layer_positioning: LayerPositioning::Centered,
+            ..default()
+        },
+        Transform {
+            scale: Vec3::splat(2.0),
             ..default()
         },
     ));
