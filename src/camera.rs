@@ -5,8 +5,8 @@ pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_camera)
-            .add_systems(Update, follow_player);
+        app.add_systems(Startup, spawn_camera);
+            // .add_systems(Update, follow_player);
     }
 }
 
@@ -20,7 +20,7 @@ fn spawn_camera(mut commands: Commands) {
     ));
 }
 
-fn follow_player(
+fn _follow_player(
     player_query: Query<&Transform, With<Player>>,
     mut camera_query: Query<&mut Transform, (With<MainCamera>, Without<Player>)>,
     time: Res<Time>,
