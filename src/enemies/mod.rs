@@ -1,5 +1,7 @@
 pub mod config;
-pub mod orcs;
+pub mod ecs;
+pub mod animation;
 
+pub use animation::*;
 pub use config::*;
-pub use orcs::*;
+pub use ecs::*;

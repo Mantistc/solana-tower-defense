@@ -1,25 +1,30 @@
 use bevy::prelude::*;
 
-use super::AnimateSprite;
+#[derive(Component, Clone)]
+pub struct AnimateSprite {
+    pub first: usize,
+    pub last: usize,
+    pub timer: Timer,
+}
 
-#[derive(Component, Clone,Resource)]
-pub struct OrcsAnimation {
+#[derive(Component, Clone, Resource)]
+pub struct EnemyAnimation {
     pub walk: AnimateSprite,
     pub idle: AnimateSprite,
     pub attack: AnimateSprite,
     pub death: AnimateSprite,
-    pub state: OrcsAnimationState,
+    pub state: EnemyAnimationState,
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
-pub enum OrcsAnimationState {
+pub enum EnemyAnimationState {
     Walk,
     Idle,
     Attack,
     Death,
 }
 
-impl Default for OrcsAnimation {
+impl Default for EnemyAnimation {
     fn default() -> Self {
         Self {
             idle: AnimateSprite {
@@ -42,21 +47,21 @@ impl Default for OrcsAnimation {
                 last: 43,
                 timer: Timer::from_seconds(0.25, TimerMode::Repeating),
             },
-            state: OrcsAnimationState::Idle,
+            state: EnemyAnimationState::Idle,
         }
     }
 }
 
-pub fn animate_orcs(
-    mut orcs_animation_query: Query<(&mut Transform, &mut Sprite, &mut OrcsAnimation)>,
+pub fn animate(
+    mut enemy_animation_query: Query<(&mut Transform, &mut Sprite, &mut EnemyAnimation)>,
     time: Res<Time>,
 ) {
-    for (mut _transform, mut orc_sprite, mut orc_animation) in &mut orcs_animation_query {
+    for (mut _transform, mut orc_sprite, mut orc_animation) in &mut enemy_animation_query {
         let animation = match orc_animation.state {
-            OrcsAnimationState::Walk => &mut orc_animation.walk,
-            OrcsAnimationState::Idle => &mut orc_animation.idle,
-            OrcsAnimationState::Attack => &mut orc_animation.attack,
-            OrcsAnimationState::Death => &mut orc_animation.death,
+            EnemyAnimationState::Walk => &mut orc_animation.walk,
+            EnemyAnimationState::Idle => &mut orc_animation.idle,
+            EnemyAnimationState::Attack => &mut orc_animation.attack,
+            EnemyAnimationState::Death => &mut orc_animation.death,
         };
         animation.timer.tick(time.delta());
 
@@ -71,4 +76,3 @@ pub fn animate_orcs(
         }
     }
 }
-
