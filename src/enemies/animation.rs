@@ -47,7 +47,7 @@ impl Default for EnemyAnimation {
                 last: 43,
                 timer: Timer::from_seconds(0.25, TimerMode::Repeating),
             },
-            state: EnemyAnimationState::Idle,
+            state: EnemyAnimationState::Walk,
         }
     }
 }
