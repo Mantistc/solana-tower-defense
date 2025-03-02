@@ -1,14 +1,15 @@
-use bevy::{app::PluginGroupBuilder, prelude::*};
+use bevy::{app::PluginGroupBuilder, input::common_conditions::input_toggle_active, prelude::*};
 use bevy_ecs_tiled::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
-use enemies::EnemiesPlugins;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use enemies::EnemiesPlugin;
 use tilemap::{
     configs::{SCREEN_HEIGHT, SCREEN_WIDTH},
     TowerDefenseTilemapPlugin,
 };
-mod animations;
 mod enemies;
 mod tilemap;
+mod tower_building;
 
 fn main() {
     App::new()
@@ -16,11 +17,11 @@ fn main() {
         .add_plugins(TilemapPlugin)
         .add_plugins(TiledMapPlugin::default())
         .add_plugins(TowerDefenseTilemapPlugin)
-        .add_plugins(EnemiesPlugins)
+        .add_plugins(EnemiesPlugin)
         // world inspector plugin to check/change and test stuff in runtime
-        // .add_plugins(
-        //     WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Space)),
-        // )
+        .add_plugins(
+            WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Space)),
+        )
         .run();
 }
 
