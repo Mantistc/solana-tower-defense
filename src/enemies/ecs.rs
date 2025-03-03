@@ -46,13 +46,13 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
         wave_control.time_between_waves.reset();
         wave_control.time_between_waves.pause();
         let wave_image = &wave_control.textures[wave_control.wave_count as usize];
-
+        let enemy_animation = &wave_control.animations[wave_control.wave_count as usize];
         commands.spawn((
             Sprite::from_atlas_image(
                 wave_image.0.clone(),
                 TextureAtlas {
                     layout: wave_image.1.clone(),
-                    index: 0,
+                    index: enemy_animation.walk.first,
                 },
             ),
             Transform {
@@ -61,7 +61,7 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
                 ..default()
             },
             Enemy::default(),
-            EnemyAnimation::default(),
+            enemy_animation.clone(),
         ));
 
         wave_control.spawned_count_in_wave += 1;
@@ -133,7 +133,10 @@ pub fn wave_control(
     enemies: Query<Entity, With<Enemy>>,
 ) {
     let current_wave_enemies: usize = enemies.iter().len();
-    info!("e: {}, wave: {}", current_wave_enemies, wave_control.wave_count);
+    info!(
+        "e: {}, wave: {}",
+        current_wave_enemies, wave_control.wave_count
+    );
     if wave_control.spawned_count_in_wave == MAX_ENEMIES_PER_WAVE && current_wave_enemies == 0 {
         if wave_control.time_between_waves.elapsed_secs() == 0.0 {
             info!("unpaused");
