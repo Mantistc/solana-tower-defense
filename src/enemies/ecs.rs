@@ -61,7 +61,7 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
                 ..default()
             },
             Enemy {
-                life: 25 * (wave_control.wave_count + 1),
+                life: 50 * (wave_control.wave_count + 1),
                 speed: 75.0,
             },
             enemy_animation.clone(),
@@ -72,7 +72,7 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
 }
 
 //
-const BREAK_POINTS: [f32; 5] = [
+pub const BREAK_POINTS: [f32; 5] = [
     250.0,  // x check
     -125.0, // y check
     -230.0, // x check

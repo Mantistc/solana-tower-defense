@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::enemies::Enemy;
+use crate::enemies::{Enemy, BREAK_POINTS};
 
 use super::{SPAWN_X_LOCATION, SPAWN_Y_LOCATION, TOWER_ATTACK_RANGE};
 
@@ -35,22 +35,19 @@ impl Default for Tower {
     }
 }
 
-pub fn spawn(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-) {
-    let texture = asset_server.load("player/player_sprite_sheet.png"); // simulate this is a tower
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(24), 6, 6, None, None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let texture = asset_server.load("towers/tower.png"); // simulate this is a tower
     commands.spawn((
-        Sprite::from_atlas_image(
-            texture.clone(),
-            TextureAtlas {
-                layout: texture_atlas_layout.clone(),
-                index: 0,
-            },
-        ),
+        Sprite::from_image(texture.clone()),
+        Tower::default(),
+        Transform {
+            translation: Vec3::new(135.0, SPAWN_Y_LOCATION, 1.0),
+            scale: Vec3::splat(2.0),
+            ..default()
+        },
+    ));
+    commands.spawn((
+        Sprite::from_image(texture.clone()),
         Tower::default(),
         Transform {
             translation: Vec3::new(SPAWN_X_LOCATION, SPAWN_Y_LOCATION, 1.0),
@@ -59,13 +56,7 @@ pub fn spawn(
         },
     ));
     commands.spawn((
-        Sprite::from_atlas_image(
-            texture,
-            TextureAtlas {
-                layout: texture_atlas_layout,
-                index: 0,
-            },
-        ),
+        Sprite::from_image(texture.clone()),
         Tower {
             attack_damage: 10,
             attack_speed: Timer::from_seconds(0.20, TimerMode::Repeating),
@@ -88,12 +79,26 @@ pub fn spawn_shots_to_attack(
         let tower_position = tower_transform.translation;
         tower.attack_speed.tick(time.delta());
 
+        let mut target_enemy_position = None;
+        let mut closest_distance_to_target = f32::MAX;
+
         for enemy_transform in &enemies {
             let enemy_position = enemy_transform.translation;
             let distance = tower_position.distance(enemy_position);
-            if distance < TOWER_ATTACK_RANGE && distance > 0.0 && tower.attack_speed.just_finished()
-            {
-                info!("spawned_shot at distance: {:?}", enemy_position);
+            let distance_to_target = enemy_position
+                .truncate()
+                .distance(Vec2::new(BREAK_POINTS[3], BREAK_POINTS[4]));
+
+            if distance < TOWER_ATTACK_RANGE && distance > 0.0 {
+                if distance_to_target < closest_distance_to_target {
+                    closest_distance_to_target = distance_to_target;
+                    target_enemy_position = Some(enemy_position);
+                }
+            }
+        }
+        if let Some(enemy_position) = target_enemy_position {
+            if tower.attack_speed.just_finished() {
+                info!("spawned_shot at enemy_position: {:?}", enemy_position);
 
                 let direction = (enemy_position - tower_position).normalize();
 
@@ -111,11 +116,10 @@ pub fn spawn_shots_to_attack(
                     },
                     shot,
                     Transform {
-                        translation: tower_position,
+                        translation: Vec3::new(tower_position.x, tower_position.y, 1.5),
                         ..default()
                     },
                 ));
-                break;
             }
         }
     }
