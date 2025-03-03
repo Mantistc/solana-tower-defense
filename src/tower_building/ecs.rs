@@ -68,7 +68,7 @@ pub fn spawn(
         ),
         Tower {
             attack_damage: 10,
-            attack_speed: Timer::from_seconds(0.15, TimerMode::Repeating),
+            attack_speed: Timer::from_seconds(0.20, TimerMode::Repeating),
         },
         Transform {
             translation: Vec3::new(-110.0, SPAWN_Y_LOCATION, 1.0),
@@ -88,47 +88,35 @@ pub fn spawn_shots_to_attack(
         let tower_position = tower_transform.translation;
         tower.attack_speed.tick(time.delta());
 
-        let mut can_attack = false;
-        let mut closest_enemy_position = Vec3::ZERO;
-        let mut closest_distance = f32::MAX;
-
         for enemy_transform in &enemies {
             let enemy_position = enemy_transform.translation;
             let distance = tower_position.distance(enemy_position);
+            if distance < TOWER_ATTACK_RANGE && distance > 0.0 && tower.attack_speed.just_finished()
+            {
+                info!("spawned_shot at distance: {:?}", enemy_position);
 
-            if distance < TOWER_ATTACK_RANGE && distance > 0.0 {
-                if distance < closest_distance {
-                    closest_distance = distance;
-                    closest_enemy_position = enemy_position;
-                    can_attack = true;
-                }
+                let direction = (enemy_position - tower_position).normalize();
+
+                let shot = Shot {
+                    speed: 700.0,
+                    direction,
+                    damage: tower.attack_damage,
+                };
+
+                commands.spawn((
+                    Sprite {
+                        color: Color::srgb(0.0, 0.0, 0.0),
+                        custom_size: Some(Vec2::new(10.0, 10.0)),
+                        ..default()
+                    },
+                    shot,
+                    Transform {
+                        translation: tower_position,
+                        ..default()
+                    },
+                ));
+                break;
             }
-        }
-
-        if can_attack && tower.attack_speed.just_finished() {
-            info!("spawned_shot at distance: {:?}", closest_distance);
-
-            let direction = (closest_enemy_position - tower_position).normalize();
-
-            let shot = Shot {
-                speed: 700.0,
-                direction,
-                damage: tower.attack_damage,
-            };
-
-            commands.spawn((
-                Sprite {
-                    color: Color::srgb(0.0, 0.0, 0.0),
-                    custom_size: Some(Vec2::new(10.0, 10.0)),
-                    ..default()
-                },
-                shot,
-                Transform {
-                    translation: tower_position,
-                    ..default()
-                },
-            ));
-            break;
         }
     }
 }
