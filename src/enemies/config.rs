@@ -3,9 +3,11 @@ use bevy::prelude::*;
 use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
 pub const TOTAL_WAVES: u8 = 30;
-pub const MAX_ENEMIES_PER_WAVE: u8 = 25;
+pub const MAX_ENEMIES_PER_WAVE: u8 = 30;
 pub const SPAWN_Y_LOCATION: f32 = 150.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
+pub const TIME_BETWEEN_WAVES: f32 = 5.0;
+pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
 pub const SCALE: f32 = 2.0;
 
 #[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
@@ -127,9 +129,9 @@ pub fn load_enemy_sprites(
         textures,
         animations,
         wave_count: 0,
-        time_between_spawns: Timer::from_seconds(1.5, TimerMode::Repeating),
+        time_between_spawns: Timer::from_seconds(TIME_BETWEEN_SPAWNS, TimerMode::Repeating),
         spawned_count_in_wave: 0,
-        time_between_waves: Timer::from_seconds(15.0, TimerMode::Once),
+        time_between_waves: Timer::from_seconds(TIME_BETWEEN_WAVES, TimerMode::Once),
     });
     next_state.set(GameState::Playing);
 }
