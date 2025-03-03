@@ -91,6 +91,30 @@ pub fn load_enemy_sprites(
             },
         ),
         (
+            "enemies/Leafbug.png",
+            UVec2::new(64, 64),
+            8,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
             "enemies/Firebug.png",
             UVec2::new(128, 64),
             11,
@@ -114,6 +138,7 @@ pub fn load_enemy_sprites(
                 state: EnemyAnimationState::Walk,
             },
         ),
+
     ];
 
     for (path, tile_size, columns, row, animation) in enemy_list {
