@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 
 pub const TOTAL_WAVES: u8 = 30;
-pub const MAX_ENEMIES_PER_WAVE: u8 = 50;
+pub const MAX_ENEMIES_PER_WAVE: u8 = 5;
 pub const SPAWN_Y_LOCATION: f32 = 150.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
+pub const SCALE: f32 = 2.0;
 
 #[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
 pub enum GameState {
@@ -22,7 +23,8 @@ pub struct WaveControl {
     pub wave_count: u8,
     pub time_between_spawns: Timer,
     pub textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)>,
-    pub spawned_count_in_wave: u8
+    pub spawned_count_in_wave: u8,
+    pub time_between_waves: Timer
 }
 
 pub fn load_enemy_sprites(
@@ -33,7 +35,7 @@ pub fn load_enemy_sprites(
 ) {
     let mut textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)> = Vec::new();
 
-    let enemy_list = vec!["enemies/orcs.png", "enemies/orcs.png", "enemies/orcs.png", "enemies/orcs.png"];
+    let enemy_list = vec!["enemies/orcs.png", "enemies/soldier.png", "enemies/orcs.png", "enemies/orcs.png"];
 
     for path in enemy_list {
         let texture = asset_server.load(path);
@@ -46,9 +48,9 @@ pub fn load_enemy_sprites(
     commands.insert_resource(WaveControl {
         textures,
         wave_count: 0,
-        time_between_spawns: Timer::from_seconds(1.5, TimerMode::Repeating),
-        spawned_count_in_wave: 0
+        time_between_spawns: Timer::from_seconds(1.75, TimerMode::Repeating),
+        spawned_count_in_wave: 0,
+        time_between_waves: Timer::from_seconds(5.0, TimerMode::Once)
     });
     next_state.set(GameState::Playing);
-    info!("loaded")
 }
