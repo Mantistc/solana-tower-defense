@@ -7,6 +7,7 @@ use tilemap::{
     configs::{SCREEN_HEIGHT, SCREEN_WIDTH},
     TowerDefenseTilemapPlugin,
 };
+use tower_building::TowersPlugin;
 mod enemies;
 mod tilemap;
 mod tower_building;
@@ -18,6 +19,7 @@ fn main() {
         .add_plugins(TiledMapPlugin::default())
         .add_plugins(TowerDefenseTilemapPlugin)
         .add_plugins(EnemiesPlugin)
+        .add_plugins(TowersPlugin)
         // world inspector plugin to check/change and test stuff in runtime
         .add_plugins(
             WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Space)),
