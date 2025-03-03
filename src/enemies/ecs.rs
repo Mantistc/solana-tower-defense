@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use super::{
-    animate, load_enemy_sprites, EnemyAnimation, EnemyAnimationState, GameState, WaveControl,
-    MAX_ENEMIES_PER_WAVE, SPAWN_Y_LOCATION,
+    animate, load_enemy_sprites, EnemyAnimation, GameState, WaveControl, MAX_ENEMIES_PER_WAVE,
+    SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
 
 // define plugin
@@ -12,7 +12,10 @@ impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
             .add_systems(Startup, load_enemy_sprites)
-            .add_systems(Update, (spawn, animate, move_enemies, despawn_enemies));
+            .add_systems(
+                Update,
+                (spawn, animate, move_enemies, despawn_enemies, wave_control),
+            );
     }
 }
 
@@ -28,7 +31,7 @@ impl Default for Enemy {
     fn default() -> Self {
         Self {
             life: 25,
-            speed: 125.0,
+            speed: 180.0,
         }
     }
 }
@@ -40,6 +43,8 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
     if wave_control.time_between_spawns.just_finished()
         && wave_control.spawned_count_in_wave < MAX_ENEMIES_PER_WAVE
     {
+        wave_control.time_between_waves.reset();
+        wave_control.time_between_waves.pause();
         let wave_image = &wave_control.textures[wave_control.wave_count as usize];
 
         commands.spawn((
@@ -51,8 +56,8 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
                 },
             ),
             Transform {
-                translation: Vec3::new(610.0, 150.0, 1.0),
-                scale: Vec3::new(-2.0, 2.0, 0.0),
+                translation: Vec3::new(SPAWN_X_LOCATION, SPAWN_Y_LOCATION, 1.0),
+                scale: Vec3::new(-SCALE, SCALE, 0.0),
                 ..default()
             },
             Enemy::default(),
@@ -72,18 +77,14 @@ const BREAK_POINTS: [f32; 5] = [
     -295.0, // y final part
 ]; //
 
-pub fn move_enemies(
-    mut enemies: Query<(&mut Transform, &Enemy, &mut EnemyAnimation)>,
-    time: Res<Time>,
-) {
-    for (mut enemy_transform, enemy, mut enemy_animation) in &mut enemies {
+pub fn move_enemies(mut enemies: Query<(&mut Transform, &Enemy)>, time: Res<Time>) {
+    for (mut enemy_transform, enemy) in &mut enemies {
         let translation = enemy_transform.translation;
         let speed = enemy.speed * time.delta_secs();
 
         // 1. if x > BREAK_POINTS[0], move -x
         if translation.x > BREAK_POINTS[0] {
             enemy_transform.translation.x -= speed;
-            info!("1");
         }
         // 2. if x <= BREAK_POINTS[0], move en -y
         else if translation.x <= BREAK_POINTS[0]
@@ -118,10 +119,37 @@ pub fn despawn_enemies(
     mut commands: Commands,
     mut enemies: Query<(&Transform, Entity), With<Enemy>>,
 ) {
-    for (enemy_transform, mut entity) in &mut enemies {
+    for (enemy_transform, entity) in &mut enemies {
         let translation = enemy_transform.translation;
         if translation.y <= BREAK_POINTS[4] {
             commands.entity(entity).despawn();
+        }
+    }
+}
+
+pub fn wave_control(
+    time: Res<Time>,
+    mut wave_control: ResMut<WaveControl>,
+    enemies: Query<Entity, With<Enemy>>,
+) {
+    let current_wave_enemies: usize = enemies.iter().len();
+    info!("e: {}, wave: {}", current_wave_enemies, wave_control.wave_count);
+    if wave_control.spawned_count_in_wave == MAX_ENEMIES_PER_WAVE && current_wave_enemies == 0 {
+        if wave_control.time_between_waves.elapsed_secs() == 0.0 {
+            info!("unpaused");
+            wave_control.time_between_waves.unpause();
+            wave_control.time_between_waves.reset();
+        }
+
+        wave_control.time_between_waves.tick(time.delta());
+        info!(
+            "elapsed time: {:.2} / 30.0",
+            wave_control.time_between_waves.elapsed_secs()
+        );
+        if wave_control.time_between_waves.just_finished() {
+            info!("restarted");
+            wave_control.spawned_count_in_wave = 0;
+            wave_control.wave_count += 1;
         }
     }
 }
