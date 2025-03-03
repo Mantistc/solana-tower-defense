@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::enemies::{Enemy, BREAK_POINTS};
+use crate::{
+    enemies::{Enemy, BREAK_POINTS},
+    tower_building::{DESPAWN_SHOT_RANGE, SHOT_HURT_DISTANCE, SHOT_SPEED},
+};
 
 use super::{SPAWN_X_LOCATION, SPAWN_Y_LOCATION, TOWER_ATTACK_RANGE};
 
@@ -21,7 +24,6 @@ pub struct Tower {
 
 #[derive(Component)]
 pub struct Shot {
-    pub speed: f32,
     pub direction: Vec3,
     pub damage: u8,
 }
@@ -103,7 +105,6 @@ pub fn spawn_shots_to_attack(
                 let direction = (enemy_position - tower_position).normalize();
 
                 let shot = Shot {
-                    speed: 700.0,
                     direction,
                     damage: tower.attack_damage,
                 };
@@ -134,9 +135,9 @@ pub fn shot_enemies(
     let shots_len = shots.iter().len();
     info!("shots: {:?}", shots_len);
     for (shot_entity, mut transform, shot) in &mut shots {
-        transform.translation += shot.direction * shot.speed * time.delta_secs();
+        transform.translation += shot.direction * SHOT_SPEED * time.delta_secs();
 
-        if transform.translation.x > 800.0 {
+        if transform.translation.x > DESPAWN_SHOT_RANGE {
             commands.entity(shot_entity).despawn();
         }
 
@@ -144,7 +145,7 @@ pub fn shot_enemies(
         for (enemy_entity, enemy_transform, mut enemy) in &mut enemies {
             let enemy_position = enemy_transform.translation;
             let distance = shot_position.distance_squared(enemy_position);
-            if distance <= 700.0 {
+            if distance <= SHOT_HURT_DISTANCE {
                 info!("shotted: {:?}", true);
                 commands.entity(shot_entity).despawn();
                 enemy.life = enemy.life.saturating_sub(shot.damage);
