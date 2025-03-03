@@ -31,7 +31,7 @@ impl Default for Enemy {
     fn default() -> Self {
         Self {
             life: 25,
-            speed: 180.0,
+            speed: 75.0,
         }
     }
 }

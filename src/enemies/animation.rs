@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Component, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct AnimateSprite {
     pub first: usize,
     pub last: usize,
