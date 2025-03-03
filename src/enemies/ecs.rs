@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use super::{
-    animate, load_enemy_sprites, EnemyAnimation, GameState, WaveControl, MAX_ENEMIES_PER_WAVE,
-    SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
+    animate, load_enemy_sprites, GameState, WaveControl, MAX_ENEMIES_PER_WAVE, SCALE,
+    SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
 
 // define plugin
@@ -60,7 +60,10 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
                 scale: Vec3::new(-SCALE, SCALE, 0.0),
                 ..default()
             },
-            Enemy::default(),
+            Enemy {
+                life: 25 * (wave_control.wave_count + 1),
+                speed: 75.0,
+            },
             enemy_animation.clone(),
         ));
 
@@ -133,24 +136,14 @@ pub fn wave_control(
     enemies: Query<Entity, With<Enemy>>,
 ) {
     let current_wave_enemies: usize = enemies.iter().len();
-    info!(
-        "e: {}, wave: {}",
-        current_wave_enemies, wave_control.wave_count
-    );
     if wave_control.spawned_count_in_wave == MAX_ENEMIES_PER_WAVE && current_wave_enemies == 0 {
         if wave_control.time_between_waves.elapsed_secs() == 0.0 {
-            info!("unpaused");
             wave_control.time_between_waves.unpause();
             wave_control.time_between_waves.reset();
         }
 
         wave_control.time_between_waves.tick(time.delta());
-        info!(
-            "elapsed time: {:.2} / 30.0",
-            wave_control.time_between_waves.elapsed_secs()
-        );
         if wave_control.time_between_waves.just_finished() {
-            info!("restarted");
             wave_control.spawned_count_in_wave = 0;
             wave_control.wave_count += 1;
         }
