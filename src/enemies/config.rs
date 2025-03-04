@@ -2,7 +2,6 @@ use bevy::prelude::*;
 
 use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
-pub const TOTAL_WAVES: u8 = 30;
 pub const MAX_ENEMIES_PER_WAVE: u8 = 30;
 pub const SPAWN_Y_LOCATION: f32 = 150.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
@@ -138,7 +137,6 @@ pub fn load_enemy_sprites(
                 state: EnemyAnimationState::Walk,
             },
         ),
-
     ];
 
     for (path, tile_size, columns, row, animation) in enemy_list {

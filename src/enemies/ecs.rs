@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::tower_building::Lifes;
+
 use super::{
     animate, load_enemy_sprites, GameState, WaveControl, MAX_ENEMIES_PER_WAVE, SCALE,
     SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
@@ -71,7 +73,6 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
     }
 }
 
-//
 pub const BREAK_POINTS: [f32; 5] = [
     250.0,  // x check
     -125.0, // y check
@@ -121,11 +122,13 @@ pub fn move_enemies(mut enemies: Query<(&mut Transform, &Enemy)>, time: Res<Time
 pub fn despawn_enemies(
     mut commands: Commands,
     mut enemies: Query<(&Transform, Entity), With<Enemy>>,
+    mut lifes: ResMut<Lifes>,
 ) {
     for (enemy_transform, entity) in &mut enemies {
         let translation = enemy_transform.translation;
         if translation.y <= BREAK_POINTS[4] {
             commands.entity(entity).despawn();
+            lifes.0 = lifes.0.saturating_sub(1);
         }
     }
 }

@@ -5,7 +5,7 @@ use crate::{
     tower_building::{DESPAWN_SHOT_RANGE, SHOT_HURT_DISTANCE, SHOT_SPEED},
 };
 
-use super::{Tower, TOWER_ATTACK_RANGE};
+use super::{Gold, Tower, TOWER_ATTACK_RANGE};
 
 #[derive(Component)]
 pub struct Shot {
@@ -72,6 +72,7 @@ pub fn shot_enemies(
     mut enemies: Query<(Entity, &Transform, &mut Enemy), Without<Shot>>,
     mut shots: Query<(Entity, &mut Transform, &Shot)>,
     mut commands: Commands,
+    mut gold: ResMut<Gold>,
     time: Res<Time>,
 ) {
     let shots_len = shots.iter().len();
@@ -93,6 +94,7 @@ pub fn shot_enemies(
                 enemy.life = enemy.life.saturating_sub(shot.damage);
                 if enemy.life <= 0 {
                     commands.entity(enemy_entity).despawn();
+                    gold.0 += 10;
                 }
             }
         }
