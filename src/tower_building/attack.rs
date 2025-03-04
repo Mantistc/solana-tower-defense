@@ -42,7 +42,6 @@ pub fn spawn_shots_to_attack(
         }
         if let Some(enemy_position) = target_enemy_position {
             if tower.attack_speed.just_finished() {
-                info!("spawned_shot at enemy_position: {:?}", enemy_position);
 
                 let direction = (enemy_position - tower_position).normalize();
 
@@ -75,8 +74,6 @@ pub fn shot_enemies(
     mut gold: ResMut<Gold>,
     time: Res<Time>,
 ) {
-    let shots_len = shots.iter().len();
-    info!("shots: {:?}", shots_len);
     for (shot_entity, mut transform, shot) in &mut shots {
         transform.translation += shot.direction * SHOT_SPEED * time.delta_secs();
 
@@ -89,7 +86,6 @@ pub fn shot_enemies(
             let enemy_position = enemy_transform.translation;
             let distance = shot_position.distance_squared(enemy_position);
             if distance <= SHOT_HURT_DISTANCE {
-                info!("shotted: {:?}", true);
                 commands.entity(shot_entity).despawn();
                 enemy.life = enemy.life.saturating_sub(shot.damage);
                 if enemy.life <= 0 {

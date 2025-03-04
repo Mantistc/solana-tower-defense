@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use super::{shot_enemies, spawn_shots_to_attack, spawn_tower};
+use super::{
+    check_click_in_area, shot_enemies, spawn_shots_to_attack, spawn_tower, track_cursor_position,
+};
 
 #[derive(Resource, Debug)]
 pub struct Gold(pub u16);
@@ -22,6 +24,9 @@ impl Plugin for TowersPlugin {
         app.insert_resource(Gold(100))
             .insert_resource(Lifes(30))
             .add_systems(Startup, spawn_tower)
+            // build systems
+            .add_systems(Update, (track_cursor_position, check_click_in_area))
+            // attack systems
             .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
     }
 }
