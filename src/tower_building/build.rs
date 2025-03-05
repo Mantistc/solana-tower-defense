@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{TowerType, SPAWN_X_LOCATION, SPAWN_Y_LOCATION};
+use super::{Gold, TowerControl, TowerType, TOWER_POSITION_PLACEMENT};
 
 #[derive(Debug, Clone)]
 pub struct TowerInfo {
@@ -12,18 +12,6 @@ pub struct TowerInfo {
 
 #[derive(Component, Debug, Deref, DerefMut)]
 pub struct Tower(pub TowerInfo);
-
-
-impl Default for Tower {
-    fn default() -> Self {
-        Self(TowerInfo {
-            attack_speed: Timer::from_seconds(0.25, TimerMode::Repeating),
-            attack_damage: 5,
-            level: 1,
-            tower_type: TowerType::Lich,
-        })
-    }
-}
 
 pub fn track_cursor_position(
     windows: Query<&Window>,
@@ -47,7 +35,8 @@ pub fn click_and_spawn(
     buttons: Res<ButtonInput<MouseButton>>,
     camera_query: Query<(&Camera, &GlobalTransform)>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    mut tower_control: ResMut<TowerControl>,
+    mut gold: ResMut<Gold>,
 ) {
     let window = windows.single();
     let range = 16.0;
@@ -57,23 +46,39 @@ pub fn click_and_spawn(
             if let Ok(world_position) = camera.viewport_to_world(camera_transform, cursor_position)
             {
                 let cursor_world_pos = world_position.origin.truncate(); // Vec2
-
-                if cursor_world_pos.x >= SPAWN_X_LOCATION - range
-                    && cursor_world_pos.x <= SPAWN_X_LOCATION + range
-                    && cursor_world_pos.y >= SPAWN_Y_LOCATION - range
-                    && cursor_world_pos.y <= SPAWN_Y_LOCATION + range
-                {
-                    if buttons.just_pressed(MouseButton::Left) {
-                        let texture = asset_server.load("towers/tower.png");
-                        commands.spawn((
-                            Sprite::from_image(texture.clone()),
-                            Tower::default(),
-                            Transform {
-                                translation: Vec3::new(SPAWN_X_LOCATION, SPAWN_Y_LOCATION, 1.0),
-                                scale: Vec3::splat(2.0),
-                                ..default()
-                            },
-                        ));
+                for (i, placement) in TOWER_POSITION_PLACEMENT.iter().enumerate() {
+                    if cursor_world_pos.x >= placement.x - range
+                        && cursor_world_pos.x <= placement.x + range
+                        && cursor_world_pos.y >= placement.y - range
+                        && cursor_world_pos.y <= placement.y + range
+                    {
+                        if tower_control.placements[i] == 0
+                            && buttons.just_pressed(MouseButton::Left)
+                        {
+                            let tower_type = TowerType::Lich;
+                            let tower_level = 1;
+                            let tower_cost = tower_type.to_cost(tower_level);
+                            let tower = Tower(tower_type.to_tower_data(tower_level));
+                            if let Some(texture) =
+                                tower_control.textures.get(&(tower_type, tower_level))
+                            {
+                                commands.spawn((
+                                    Sprite::from_image(texture.0.clone()),
+                                    tower,
+                                    Transform {
+                                        translation: Vec3::new(placement.x, placement.y, 1.0),
+                                        scale: Vec3::splat(2.0),
+                                        ..default()
+                                    },
+                                ));
+                                tower_control.placements[i] = 1;
+                                gold.0 -= tower_cost;
+                                info!("gold: {:?}", gold.0);
+                                break;
+                            }
+                        } else {
+                            info!("placement value: {:?}", tower_control.placements[i])
+                        }
                     }
                 }
             }
