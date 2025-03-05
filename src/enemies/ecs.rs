@@ -29,9 +29,12 @@ pub struct Enemy {
     pub speed: f32,
 }
 
+#[derive(Debug, Component, Deref, DerefMut,PartialEq, Eq, PartialOrd, Ord)]
+pub struct BreakPointLvl(pub u8);
+
 // define systems
 fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveControl>) {
-    if wave_control.wave_count + 1 == wave_control.textures.len() as u8 {
+    if wave_control.wave_count == wave_control.textures.len() as u8 {
         return;
     }
     wave_control.time_between_spawns.tick(time.delta());
@@ -61,6 +64,7 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
                 speed: 75.0,
             },
             enemy_animation.clone(),
+            BreakPointLvl(0),
         ));
 
         wave_control.spawned_count_in_wave += 1;
@@ -76,8 +80,11 @@ pub const BREAK_POINTS: [Vec2; 6] = [
     Vec2::new(-455.0, -295.0),
 ];
 
-pub fn move_enemies(mut enemies: Query<(&mut Transform, &Enemy)>, time: Res<Time>) {
-    for (mut enemy_transform, enemy) in &mut enemies {
+pub fn move_enemies(
+    mut enemies: Query<(&mut Transform, &Enemy, &mut BreakPointLvl)>,
+    time: Res<Time>,
+) {
+    for (mut enemy_transform, enemy, mut breal_point_lvl) in &mut enemies {
         let translation = enemy_transform.translation;
         let speed = enemy.speed * time.delta_secs();
 
@@ -91,10 +98,12 @@ pub fn move_enemies(mut enemies: Query<(&mut Transform, &Enemy)>, time: Res<Time
             && translation.y > BREAK_POINTS[1].y
         {
             enemy_transform.translation.y -= speed;
+            *breal_point_lvl = BreakPointLvl(1);
         }
         // 3. if y <= BREAK_POINTS[1] && x >= BREAK_POINTS[2], move -x
         else if translation.y <= BREAK_POINTS[1].y && translation.x >= BREAK_POINTS[2].x {
             enemy_transform.translation.x -= speed;
+            *breal_point_lvl = BreakPointLvl(2);
         }
         // 4. if y < SPAWN_Y_LOCATION && x <= BREAK_POINTS[2], move +y
         else if translation.y < SPAWN_Y_LOCATION
@@ -102,14 +111,17 @@ pub fn move_enemies(mut enemies: Query<(&mut Transform, &Enemy)>, time: Res<Time
             && translation.x > BREAK_POINTS[4].x
         {
             enemy_transform.translation.y += speed;
+            *breal_point_lvl = BreakPointLvl(3);
         }
         // 5. if y >= SPAWN_Y_LOCATION && x >= BREAK_POINTS[3], move -x
         else if translation.y >= SPAWN_Y_LOCATION && translation.x >= BREAK_POINTS[4].x {
             enemy_transform.translation.x -= speed;
+            *breal_point_lvl = BreakPointLvl(4);
         }
         // 6. if y > BREAK_POINTS[4] && x <= BREAK_POINTS[3], move -y
         else if translation.y > BREAK_POINTS[5].y && translation.x <= BREAK_POINTS[4].x {
             enemy_transform.translation.y -= speed;
+            *breal_point_lvl = BreakPointLvl(5);
         }
     }
 }

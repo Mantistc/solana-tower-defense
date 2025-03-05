@@ -13,22 +13,6 @@ pub struct TowerInfo {
 #[derive(Component, Debug, Deref, DerefMut)]
 pub struct Tower(pub TowerInfo);
 
-pub fn track_cursor_position(
-    windows: Query<&Window>,
-    camera_query: Query<(&Camera, &GlobalTransform)>,
-) {
-    let window = windows.single();
-
-    if let Some(cursor_position) = window.cursor_position() {
-        if let Ok((camera, camera_transform)) = camera_query.get_single() {
-            if let Ok(world_position) = camera.viewport_to_world(camera_transform, cursor_position)
-            {
-                let world_coords = world_position.origin.truncate(); // Vec2
-                                                                     // info!("Cursor World Position: {:?}", world_coords);
-            }
-        }
-    }
-}
 
 pub fn click_and_spawn(
     windows: Query<&Window>,

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    enemies::{Enemy, BREAK_POINTS},
+    enemies::{BreakPointLvl, Enemy, BREAK_POINTS},
     tower_building::{DESPAWN_SHOT_RANGE, SHOT_HURT_DISTANCE, SHOT_SPEED},
 };
 
@@ -14,7 +14,7 @@ pub struct Shot {
 }
 
 pub fn spawn_shots_to_attack(
-    enemies: Query<&Transform, (Without<Tower>, With<Enemy>)>,
+    enemies: Query<(&Transform, &BreakPointLvl), (Without<Tower>, With<Enemy>)>,
     mut towers: Query<(&Transform, &mut Tower)>,
     mut commands: Commands,
     time: Res<Time>,
@@ -26,16 +26,42 @@ pub fn spawn_shots_to_attack(
         let mut target_enemy_position = None;
         let mut closest_distance_to_target = f32::MAX;
 
-        for enemy_transform in &enemies {
-            let enemy_position = enemy_transform.translation;
-            let distance = tower_position.distance(enemy_position);
-            let distance_to_target = enemy_position.truncate().distance(BREAK_POINTS[5]);
+        // the higher breakpoint lvl, the close to the victory
+        // so, we needs to filter all enemies that are in the attack range
+        // then, take all of the higher breakpoint lvl
+        // then take the closer to the breakpoint
 
-            if distance < TOWER_ATTACK_RANGE && distance > 0.0 {
-                if distance_to_target < closest_distance_to_target {
-                    closest_distance_to_target = distance_to_target;
-                    target_enemy_position = Some(enemy_position);
-                }
+        let enemies_in_range: Vec<(&Transform, &BreakPointLvl)> = enemies
+            .iter()
+            .filter(|(t, _)| {
+                let enemy_position = t.translation;
+                let distance = tower_position.distance(enemy_position);
+                distance < TOWER_ATTACK_RANGE && distance > 0.0
+            })
+            .collect();
+
+        // get the max break lvl value
+        let max_break_value = enemies_in_range
+            .iter()
+            .cloned()
+            .map(|(_, b)| b)
+            .max()
+            .unwrap_or(&BreakPointLvl(0));
+        // get all the enemies with this max break lvl
+        let closer_enemies_to_victory: Vec<(&Transform, &BreakPointLvl)> = enemies_in_range
+            .iter()
+            .filter(|(_, b)| **b == *max_break_value)
+            .copied()
+            .collect();
+
+        // get the closer enemy to the break point lvl
+        for (enemy_transform, break_point_lvl) in &closer_enemies_to_victory {
+            let index = break_point_lvl.0 as usize;
+            let enemy_position = enemy_transform.translation;
+            let distance_to_target = enemy_position.truncate().distance(BREAK_POINTS[index]);
+            if distance_to_target < closest_distance_to_target {
+                closest_distance_to_target = distance_to_target;
+                target_enemy_position = Some(enemy_position);
             }
         }
         if let Some(enemy_position) = target_enemy_position {
