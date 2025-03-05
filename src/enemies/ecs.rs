@@ -29,17 +29,11 @@ pub struct Enemy {
     pub speed: f32,
 }
 
-impl Default for Enemy {
-    fn default() -> Self {
-        Self {
-            life: 25,
-            speed: 75.0,
-        }
-    }
-}
-
 // define systems
 fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveControl>) {
+    if wave_control.wave_count + 1 == wave_control.textures.len() as u8 {
+        return;
+    }
     wave_control.time_between_spawns.tick(time.delta());
 
     if wave_control.time_between_spawns.just_finished()
@@ -73,13 +67,14 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
     }
 }
 
-pub const BREAK_POINTS: [f32; 5] = [
-    250.0,  // x check
-    -125.0, // y check
-    -230.0, // x check
-    -455.0, // x check
-    -295.0, // y final part
-]; //
+pub const BREAK_POINTS: [Vec2; 6] = [
+    Vec2::new(250.0, SPAWN_Y_LOCATION),
+    Vec2::new(250.0, -125.0),
+    Vec2::new(-230.0, -125.0),
+    Vec2::new(-230.0, SPAWN_Y_LOCATION),
+    Vec2::new(-455.0, SPAWN_Y_LOCATION),
+    Vec2::new(-455.0, -295.0),
+];
 
 pub fn move_enemies(mut enemies: Query<(&mut Transform, &Enemy)>, time: Res<Time>) {
     for (mut enemy_transform, enemy) in &mut enemies {
@@ -87,33 +82,33 @@ pub fn move_enemies(mut enemies: Query<(&mut Transform, &Enemy)>, time: Res<Time
         let speed = enemy.speed * time.delta_secs();
 
         // 1. if x > BREAK_POINTS[0], move -x
-        if translation.x > BREAK_POINTS[0] {
+        if translation.x > BREAK_POINTS[0].x {
             enemy_transform.translation.x -= speed;
         }
         // 2. if x <= BREAK_POINTS[0], move en -y
-        else if translation.x <= BREAK_POINTS[0]
-            && translation.x > BREAK_POINTS[2]
-            && translation.y > BREAK_POINTS[1]
+        else if translation.x <= BREAK_POINTS[0].x
+            && translation.x > BREAK_POINTS[2].x
+            && translation.y > BREAK_POINTS[1].y
         {
             enemy_transform.translation.y -= speed;
         }
         // 3. if y <= BREAK_POINTS[1] && x >= BREAK_POINTS[2], move -x
-        else if translation.y <= BREAK_POINTS[1] && translation.x >= BREAK_POINTS[2] {
+        else if translation.y <= BREAK_POINTS[1].y && translation.x >= BREAK_POINTS[2].x {
             enemy_transform.translation.x -= speed;
         }
         // 4. if y < SPAWN_Y_LOCATION && x <= BREAK_POINTS[2], move +y
         else if translation.y < SPAWN_Y_LOCATION
-            && translation.x <= BREAK_POINTS[2]
-            && translation.x > BREAK_POINTS[3]
+            && translation.x <= BREAK_POINTS[2].x
+            && translation.x > BREAK_POINTS[4].x
         {
             enemy_transform.translation.y += speed;
         }
         // 5. if y >= SPAWN_Y_LOCATION && x >= BREAK_POINTS[3], move -x
-        else if translation.y >= SPAWN_Y_LOCATION && translation.x >= BREAK_POINTS[3] {
+        else if translation.y >= SPAWN_Y_LOCATION && translation.x >= BREAK_POINTS[4].x {
             enemy_transform.translation.x -= speed;
         }
         // 6. if y > BREAK_POINTS[4] && x <= BREAK_POINTS[3], move -y
-        else if translation.y > BREAK_POINTS[4] && translation.x <= BREAK_POINTS[3] {
+        else if translation.y > BREAK_POINTS[5].y && translation.x <= BREAK_POINTS[4].x {
             enemy_transform.translation.y -= speed;
         }
     }
@@ -126,7 +121,7 @@ pub fn despawn_enemies(
 ) {
     for (enemy_transform, entity) in &mut enemies {
         let translation = enemy_transform.translation;
-        if translation.y <= BREAK_POINTS[4] {
+        if translation.y <= BREAK_POINTS[5].y {
             commands.entity(entity).despawn();
             lifes.0 = lifes.0.saturating_sub(1);
         }
