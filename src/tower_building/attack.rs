@@ -29,9 +29,7 @@ pub fn spawn_shots_to_attack(
         for enemy_transform in &enemies {
             let enemy_position = enemy_transform.translation;
             let distance = tower_position.distance(enemy_position);
-            let distance_to_target = enemy_position
-                .truncate()
-                .distance(Vec2::new(BREAK_POINTS[3], BREAK_POINTS[4]));
+            let distance_to_target = enemy_position.truncate().distance(BREAK_POINTS[5]);
 
             if distance < TOWER_ATTACK_RANGE && distance > 0.0 {
                 if distance_to_target < closest_distance_to_target {
@@ -42,7 +40,6 @@ pub fn spawn_shots_to_attack(
         }
         if let Some(enemy_position) = target_enemy_position {
             if tower.attack_speed.just_finished() {
-
                 let direction = (enemy_position - tower_position).normalize();
 
                 let shot = Shot {

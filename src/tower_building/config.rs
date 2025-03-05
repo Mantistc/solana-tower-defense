@@ -1,5 +1,3 @@
-use std::{ops::Deref, u8};
-
 use bevy::{prelude::*, utils::HashMap};
 
 use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
@@ -50,6 +48,22 @@ pub enum TowerType {
 
 pub const COST_TABLE: [[u16; 3]; 3] = [[5, 25, 50], [25, 75, 160], [50, 125, 225]];
 pub const INITIAL_TOWER_DAMAGE: [u8; 3] = [5, 10, 25];
+pub const TOWER_POSITION_PLACEMENT: [Vec2; 14] = [
+    Vec2::new(17.0, 15.0),
+    Vec2::new(-110.0, 15.0),
+    Vec2::new(140.0, 15.0),
+    Vec2::new(-210.0, 270.0),
+    Vec2::new(-340.0, 270.0),
+    Vec2::new(-465.0, 270.0),
+    Vec2::new(-335.0, 65.0),
+    Vec2::new(-240.0, -230.0),
+    Vec2::new(17.0, -230.0),
+    Vec2::new(268.0, -230.0),
+    Vec2::new(400.0, 53.0),
+    Vec2::new(560.0, 53.0),
+    Vec2::new(400.0, 270.0),
+    Vec2::new(560.0, 270.0),
+];
 
 impl TowerType {
     pub fn to_cost(&self, lvl: u8) -> u16 {
@@ -88,11 +102,6 @@ impl TowerType {
         }
     }
 }
-pub const TOWER_POSITION_PLACEMENT: [Vec2; 3] = [
-    Vec2::new(25.0, 15.0),
-    Vec2::new(-110.0, 15.0),
-    Vec2::new(140.0, 15.0),
-];
 
 pub fn load_towers_sprites(
     asset_server: Res<AssetServer>,

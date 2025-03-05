@@ -39,7 +39,7 @@ pub fn click_and_spawn(
     mut gold: ResMut<Gold>,
 ) {
     let window = windows.single();
-    let range = 16.0;
+    let range = 32.0;
 
     if let Some(cursor_position) = window.cursor_position() {
         if let Ok((camera, camera_transform)) = camera_query.get_single() {
