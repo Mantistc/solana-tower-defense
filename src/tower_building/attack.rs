@@ -18,6 +18,7 @@ pub fn spawn_shots_to_attack(
     mut towers: Query<(&Transform, &mut Tower)>,
     mut commands: Commands,
     time: Res<Time>,
+    asset_server: Res<AssetServer>,
 ) {
     for (tower_transform, mut tower) in &mut towers {
         let tower_position = tower_transform.translation;
@@ -72,12 +73,11 @@ pub fn spawn_shots_to_attack(
                     direction,
                     damage: tower.attack_damage,
                 };
-
+                let texture = asset_server.load("towers/lich_01_shot.png");
                 commands.spawn((
                     Sprite {
-                        color: Color::srgb(0.0, 0.0, 0.0),
-                        custom_size: Some(Vec2::new(10.0, 10.0)),
-                        ..default()
+                        custom_size: Some(Vec2::new(64.0, 64.0)),
+                        ..Sprite::from_image(texture)
                     },
                     shot,
                     Transform {
