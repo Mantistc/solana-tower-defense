@@ -2,9 +2,7 @@ use bevy::{prelude::*, utils::HashMap};
 
 use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
-use super::{
-    click_and_spawn, shot_enemies, spawn_shots_to_attack, track_cursor_position, TowerInfo,
-};
+use super::{click_and_spawn, shot_enemies, spawn_shots_to_attack, TowerInfo};
 
 pub const TOWER_ATTACK_RANGE: f32 = 250.0;
 pub const DESPAWN_SHOT_RANGE: f32 = 800.0;
@@ -20,7 +18,7 @@ impl Plugin for TowersPlugin {
             .insert_resource(Lifes(30))
             .add_systems(Startup, load_towers_sprites)
             // build systems
-            .add_systems(Update, (track_cursor_position, click_and_spawn))
+            .add_systems(Update, click_and_spawn)
             // attack systems
             .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
     }
