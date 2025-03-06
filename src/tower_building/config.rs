@@ -2,7 +2,7 @@ use bevy::{prelude::*, utils::HashMap};
 
 use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
-use super::{click_and_spawn, shot_enemies, spawn_shots_to_attack, TowerInfo};
+use super::{buy_tower, select_tower_type, shot_enemies, spawn_shots_to_attack, TowerInfo};
 
 pub const TOWER_ATTACK_RANGE: f32 = 250.0;
 pub const DESPAWN_SHOT_RANGE: f32 = 800.0;
@@ -14,17 +14,18 @@ pub struct TowersPlugin;
 
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Gold(100))
+        app.insert_resource(Gold(25))
             .insert_resource(Lifes(30))
+            .insert_resource(SelectedTowerType(TowerType::Lich))
             .add_systems(Startup, load_towers_sprites)
             // build systems
-            .add_systems(Update, click_and_spawn)
+            .add_systems(Update, (select_tower_type, buy_tower))
             // attack systems
             .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
     }
 }
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Debug, Deref, DerefMut)]
 pub struct Gold(pub u16);
 
 #[derive(Resource, Debug)]
@@ -44,8 +45,11 @@ pub enum TowerType {
     Electric,
 }
 
-pub const COST_TABLE: [[u16; 3]; 3] = [[5, 25, 50], [25, 75, 160], [50, 125, 225]];
-pub const INITIAL_TOWER_DAMAGE: [u8; 3] = [5, 10, 25];
+#[derive(Resource, Debug, Deref, DerefMut, Hash)]
+pub struct SelectedTowerType(pub TowerType);
+
+pub const COST_TABLE: [[u16; 3]; 3] = [[25, 100, 180], [75, 150, 300], [125, 350, 600]];
+pub const INITIAL_TOWER_DAMAGE: [u8; 3] = [10, 15, 30];
 pub const TOWER_POSITION_PLACEMENT: [Vec2; 14] = [
     Vec2::new(17.0, 15.0),
     Vec2::new(-110.0, 15.0),
@@ -109,10 +113,10 @@ pub fn load_towers_sprites(
     let mut textures = HashMap::new();
     let mut animations: Vec<EnemyAnimation> = Vec::new();
 
-    let enemy_list = vec![
+    let tower_sprites = vec![
         (
             (TowerType::Lich, 1),
-            "towers/tower.png",
+            "towers/lich_01_tower.png",
             UVec2::splat(48),
             8,
             6,
@@ -137,7 +141,7 @@ pub fn load_towers_sprites(
         ),
         (
             (TowerType::Lich, 2),
-            "towers/tower.png",
+            "towers/lich_01_tower.png",
             UVec2::new(43, 31),
             7,
             6,
@@ -162,7 +166,157 @@ pub fn load_towers_sprites(
         ),
         (
             (TowerType::Lich, 3),
-            "towers/tower.png",
+            "towers/lich_01_tower.png",
+            UVec2::new(64, 64),
+            8,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            (TowerType::Zigurat, 1),
+            "towers/zigurat_01_tower.png",
+            UVec2::new(64, 64),
+            8,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            (TowerType::Zigurat, 2),
+            "towers/zigurat_01_tower.png",
+            UVec2::new(64, 64),
+            8,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            (TowerType::Zigurat, 3),
+            "towers/zigurat_01_tower.png",
+            UVec2::new(64, 64),
+            8,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            (TowerType::Electric, 1),
+            "towers/electric_01_tower.png",
+            UVec2::new(64, 64),
+            8,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            (TowerType::Electric, 2),
+            "towers/electric_01_tower.png",
+            UVec2::new(64, 64),
+            8,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            (TowerType::Electric, 3),
+            "towers/electric_01_tower.png",
             UVec2::new(64, 64),
             8,
             9,
@@ -187,7 +341,7 @@ pub fn load_towers_sprites(
         ),
     ];
 
-    for (tower, path, tile_size, columns, row, animation) in enemy_list {
+    for (tower, path, tile_size, columns, row, animation) in tower_sprites {
         let texture = asset_server.load(path);
         let texture_atlas = TextureAtlasLayout::from_grid(tile_size, columns, row, None, None);
         let atlas_handle = texture_atlas_layouts.add(texture_atlas);

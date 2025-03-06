@@ -113,7 +113,7 @@ pub fn shot_enemies(
                 enemy.life = enemy.life.saturating_sub(shot.damage);
                 if enemy.life <= 0 {
                     commands.entity(enemy_entity).despawn();
-                    gold.0 += 10;
+                    gold.0 += 5;
                 }
             }
         }
