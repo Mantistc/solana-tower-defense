@@ -1,6 +1,6 @@
-use bevy::prelude::*;
+use bevy::{input::keyboard::Key, prelude::*};
 
-use super::{Gold, TowerControl, TowerType, TOWER_POSITION_PLACEMENT};
+use super::{Gold, SelectedTowerType, TowerControl, TowerType, TOWER_POSITION_PLACEMENT};
 
 #[derive(Debug, Clone)]
 pub struct TowerInfo {
@@ -13,14 +13,14 @@ pub struct TowerInfo {
 #[derive(Component, Debug, Deref, DerefMut)]
 pub struct Tower(pub TowerInfo);
 
-
-pub fn click_and_spawn(
+pub fn buy_tower(
     windows: Query<&Window>,
     buttons: Res<ButtonInput<MouseButton>>,
     camera_query: Query<(&Camera, &GlobalTransform)>,
     mut commands: Commands,
     mut tower_control: ResMut<TowerControl>,
     mut gold: ResMut<Gold>,
+    selected_tower_type: Res<SelectedTowerType>,
 ) {
     let window = windows.single();
     let range = 32.0;
@@ -39,12 +39,18 @@ pub fn click_and_spawn(
                         if tower_control.placements[i] == 0
                             && buttons.just_pressed(MouseButton::Left)
                         {
-                            let tower_type = TowerType::Lich;
                             let tower_level = 1;
-                            let tower_cost = tower_type.to_cost(tower_level);
-                            let tower = Tower(tower_type.to_tower_data(tower_level));
-                            if let Some(texture) =
-                                tower_control.textures.get(&(tower_type, tower_level))
+                            let tower_cost = selected_tower_type.to_cost(tower_level);
+                            let tower = Tower(selected_tower_type.to_tower_data(tower_level));
+
+                            if gold.0 < tower_cost {
+                                info!("gold: {:?}", gold.0);
+                                return;
+                            }
+
+                            if let Some(texture) = tower_control
+                                .textures
+                                .get(&(selected_tower_type.0.clone(), tower_level))
                             {
                                 commands.spawn((
                                     Sprite::from_image(texture.0.clone()),
@@ -60,12 +66,27 @@ pub fn click_and_spawn(
                                 info!("gold: {:?}", gold.0);
                                 break;
                             }
-                        } else {
-                            info!("placement value: {:?}", tower_control.placements[i])
                         }
                     }
                 }
             }
         }
+    }
+}
+
+pub fn upgrade_tower() {}
+
+pub fn select_tower_type(
+    mut selected_tower_type: ResMut<SelectedTowerType>,
+    input: Res<ButtonInput<KeyCode>>,
+) {
+    if input.just_pressed(KeyCode::KeyZ) {
+        selected_tower_type.0 = TowerType::Zigurat;
+    }
+    if input.just_pressed(KeyCode::KeyE) {
+        selected_tower_type.0 = TowerType::Electric;
+    }
+    if input.just_pressed(KeyCode::KeyL) {
+        selected_tower_type.0 = TowerType::Lich;
     }
 }
