@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
-use crate::tower_building::Lifes;
+use crate::tower_building::{GameState, Lifes};
 
 use super::{
-    animate, load_enemy_sprites, GameState, WaveControl, MAX_ENEMIES_PER_WAVE, SCALE,
+    animate, control_first_wave, load_enemy_sprites, WaveControl, MAX_ENEMIES_PER_WAVE, SCALE,
     SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
 
@@ -12,11 +12,20 @@ pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
-        app.init_state::<GameState>()
-            .add_systems(Startup, load_enemy_sprites)
+        app.add_systems(Startup, load_enemy_sprites)
             .add_systems(
                 Update,
-                (spawn, animate, move_enemies, despawn_enemies, wave_control),
+                control_first_wave.run_if(in_state(GameState::Building)),
+            )
+            .add_systems(
+                Update,
+                wave_control
+                    .run_if(in_state(GameState::Building).or(in_state(GameState::Attacking))),
+            )
+            .add_systems(
+                Update,
+                (spawn, animate, move_enemies, despawn_enemies)
+                    .run_if(in_state(GameState::Attacking)),
             );
     }
 }
@@ -29,7 +38,7 @@ pub struct Enemy {
     pub speed: f32,
 }
 
-#[derive(Debug, Component, Deref, DerefMut,PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Component, Deref, DerefMut, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BreakPointLvl(pub u8);
 
 // define systems
@@ -144,18 +153,26 @@ pub fn wave_control(
     time: Res<Time>,
     mut wave_control: ResMut<WaveControl>,
     enemies: Query<Entity, With<Enemy>>,
+    mut game_state: ResMut<NextState<GameState>>,
 ) {
     let current_wave_enemies: usize = enemies.iter().len();
+
     if wave_control.spawned_count_in_wave == MAX_ENEMIES_PER_WAVE && current_wave_enemies == 0 {
-        if wave_control.time_between_waves.elapsed_secs() == 0.0 {
+        if wave_control.time_between_waves.paused() {
             wave_control.time_between_waves.unpause();
             wave_control.time_between_waves.reset();
+            game_state.set(GameState::Building);
         }
 
         wave_control.time_between_waves.tick(time.delta());
         if wave_control.time_between_waves.just_finished() {
             wave_control.spawned_count_in_wave = 0;
             wave_control.wave_count += 1;
+            game_state.set(GameState::Attacking);
+            info!(
+                "cooldown finished, starting Wave: {:?}",
+                wave_control.wave_count
+            );
         }
     }
 }

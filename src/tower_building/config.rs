@@ -14,14 +14,33 @@ pub struct TowersPlugin;
 
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Gold(25))
+        app.init_state::<GameState>()
+            .insert_resource(Gold(25))
             .insert_resource(Lifes(30))
             .insert_resource(SelectedTowerType(TowerType::Lich))
             .add_systems(Startup, load_towers_sprites)
             // build systems
-            .add_systems(Update, (select_tower_type, buy_tower))
+            .add_systems(
+                Update,
+                (
+                    select_tower_type.run_if(in_state(GameState::Building)),
+                    buy_tower.run_if(in_state(GameState::Building)),
+                ),
+            )
             // attack systems
             .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
+    }
+}
+
+#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
+pub enum GameState {
+    Building,
+    Attacking,
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        GameState::Building
     }
 }
 
