@@ -1,25 +1,15 @@
 use bevy::prelude::*;
 
+use crate::tower_building::GameState;
+
 use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
-pub const MAX_ENEMIES_PER_WAVE: u8 = 30;
+pub const MAX_ENEMIES_PER_WAVE: u8 = 10;
 pub const SPAWN_Y_LOCATION: f32 = 150.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
 pub const TIME_BETWEEN_WAVES: f32 = 5.0;
 pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
 pub const SCALE: f32 = 2.0;
-
-#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
-pub enum GameState {
-    Loading,
-    Playing,
-}
-
-impl Default for GameState {
-    fn default() -> Self {
-        GameState::Loading
-    }
-}
 
 #[derive(Resource, Debug)]
 pub struct WaveControl {
@@ -35,7 +25,6 @@ pub fn load_enemy_sprites(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut commands: Commands,
-    mut next_state: ResMut<NextState<GameState>>,
 ) {
     let mut textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)> = Vec::new();
     let mut animations: Vec<EnemyAnimation> = Vec::new();
@@ -156,5 +145,20 @@ pub fn load_enemy_sprites(
         spawned_count_in_wave: 0,
         time_between_waves: Timer::from_seconds(TIME_BETWEEN_WAVES, TimerMode::Once),
     });
-    next_state.set(GameState::Playing);
+}
+
+pub fn control_first_wave(
+    time: Res<Time>,
+    mut wave_control: ResMut<WaveControl>,
+    mut game_state: ResMut<NextState<GameState>>,
+) {
+    if wave_control.wave_count == 0 {
+        wave_control.time_between_waves.tick(time.delta());
+        if wave_control.time_between_waves.just_finished() {
+            game_state.set(GameState::Attacking);
+            wave_control.time_between_waves.pause();
+            wave_control.time_between_waves.reset();
+            info!("fist wave controlled");
+        }
+    }
 }
