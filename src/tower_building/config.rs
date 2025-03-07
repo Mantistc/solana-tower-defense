@@ -4,18 +4,12 @@ use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
 use super::{buy_tower, select_tower_type, shot_enemies, spawn_shots_to_attack, TowerInfo};
 
-pub const TOWER_ATTACK_RANGE: f32 = 250.0;
-pub const DESPAWN_SHOT_RANGE: f32 = 800.0;
-pub const SHOT_HURT_DISTANCE: f32 = 700.0;
-pub const SHOT_SPEED: f32 = 700.0;
-pub const SCALAR: f32 = 0.5;
-
 pub struct TowersPlugin;
 
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
-            .insert_resource(Gold(25))
+            .insert_resource(Gold(50))
             .insert_resource(Lifes(30))
             .insert_resource(SelectedTowerType(TowerType::Lich))
             .add_systems(Startup, load_towers_sprites)
@@ -68,7 +62,13 @@ pub enum TowerType {
 pub struct SelectedTowerType(pub TowerType);
 
 pub const COST_TABLE: [[u16; 3]; 3] = [[25, 100, 180], [75, 150, 300], [125, 350, 600]];
-pub const INITIAL_TOWER_DAMAGE: [u8; 3] = [10, 15, 30];
+pub const INITIAL_TOWER_DAMAGE: [u8; 3] = [5, 10, 15];
+pub const TOWER_ATTACK_RANGE: f32 = 250.0;
+pub const DESPAWN_SHOT_RANGE: f32 = 800.0;
+pub const SHOT_HURT_DISTANCE: f32 = 700.0;
+pub const SHOT_SPEED: f32 = 700.0;
+pub const SCALAR: f32 = 0.5;
+
 pub const TOWER_POSITION_PLACEMENT: [Vec2; 14] = [
     Vec2::new(17.0, 15.0),
     Vec2::new(-110.0, 15.0),
@@ -104,15 +104,20 @@ impl TowerType {
         let attack_speed = Timer::from_seconds(0.25, TimerMode::Repeating);
 
         let attack_damage = match self {
-            TowerType::Lich => ((INITIAL_TOWER_DAMAGE[0] * level) as f32 * SCALAR)
-                .round()
-                .clamp(0.0, 255.0) as u8,
-            TowerType::Zigurat => ((INITIAL_TOWER_DAMAGE[1] * level) as f32 * SCALAR)
-                .round()
-                .clamp(0.0, 255.0) as u8,
-            TowerType::Electric => ((INITIAL_TOWER_DAMAGE[2] * level) as f32 * SCALAR)
-                .round()
-                .clamp(0.0, 255.0) as u8,
+            TowerType::Lich => ((INITIAL_TOWER_DAMAGE[0] as f32)
+                * (1.0 + SCALAR).powf(level as f32))
+            .round()
+            .clamp(0.0, 255.0) as u16,
+
+            TowerType::Zigurat => ((INITIAL_TOWER_DAMAGE[1] as f32)
+                * (1.0 + SCALAR).powf(level as f32))
+            .round()
+            .clamp(0.0, 255.0) as u16,
+
+            TowerType::Electric => ((INITIAL_TOWER_DAMAGE[2] as f32)
+                * (1.0 + SCALAR).powf(level as f32))
+            .round()
+            .clamp(0.0, 255.0) as u16,
         };
 
         TowerInfo {
