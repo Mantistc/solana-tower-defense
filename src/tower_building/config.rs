@@ -9,7 +9,7 @@ pub struct TowersPlugin;
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
-            .insert_resource(Gold(50))
+            .insert_resource(Gold(130))
             .insert_resource(Lifes(30))
             .insert_resource(SelectedTowerType(TowerType::Lich))
             .add_systems(Startup, load_towers_sprites)
@@ -61,8 +61,8 @@ pub enum TowerType {
 #[derive(Resource, Debug, Deref, DerefMut, Hash)]
 pub struct SelectedTowerType(pub TowerType);
 
-pub const COST_TABLE: [[u16; 3]; 3] = [[25, 100, 180], [75, 150, 300], [125, 350, 600]];
-pub const INITIAL_TOWER_DAMAGE: [u8; 3] = [5, 10, 15];
+pub const COST_TABLE: [u16; 3] = [40, 80, 245];
+pub const INITIAL_TOWER_DAMAGE: [u16; 3] = [10, 25, 80];
 pub const TOWER_ATTACK_RANGE: f32 = 250.0;
 pub const DESPAWN_SHOT_RANGE: f32 = 800.0;
 pub const SHOT_HURT_DISTANCE: f32 = 700.0;
@@ -87,38 +87,37 @@ pub const TOWER_POSITION_PLACEMENT: [Vec2; 14] = [
 ];
 
 impl TowerType {
-    pub fn to_cost(&self, lvl: u8) -> u16 {
-        let tower_index = match self {
-            TowerType::Lich => 0,
-            TowerType::Zigurat => 1,
-            TowerType::Electric => 2,
+    pub fn to_cost(&self, level: u8) -> u16 {
+        let base_cost = match self {
+            TowerType::Lich => COST_TABLE[0],
+            TowerType::Zigurat => COST_TABLE[1],
+            TowerType::Electric => COST_TABLE[2],
         };
 
-        COST_TABLE[tower_index]
-            .get((lvl - 1) as usize)
-            .copied()
-            .unwrap_or(u16::MAX)
+        (base_cost as f32 * 1.3f32.powf(level as f32)).round() as u16
     }
 
     pub fn to_tower_data(&self, level: u8) -> TowerInfo {
-        let attack_speed = Timer::from_seconds(0.25, TimerMode::Repeating);
-
-        let attack_damage = match self {
-            TowerType::Lich => ((INITIAL_TOWER_DAMAGE[0] as f32)
-                * (1.0 + SCALAR).powf(level as f32))
-            .round()
-            .clamp(0.0, 255.0) as u16,
-
-            TowerType::Zigurat => ((INITIAL_TOWER_DAMAGE[1] as f32)
-                * (1.0 + SCALAR).powf(level as f32))
-            .round()
-            .clamp(0.0, 255.0) as u16,
-
-            TowerType::Electric => ((INITIAL_TOWER_DAMAGE[2] as f32)
-                * (1.0 + SCALAR).powf(level as f32))
-            .round()
-            .clamp(0.0, 255.0) as u16,
+        let base_damage = match self {
+            TowerType::Lich => INITIAL_TOWER_DAMAGE[0],
+            TowerType::Zigurat => INITIAL_TOWER_DAMAGE[1],
+            TowerType::Electric => INITIAL_TOWER_DAMAGE[2],
         };
+
+        let attack_damage = ((base_damage as f32) * (1.1 + SCALAR).powf(level as f32))
+            .round()
+            .clamp(1.0, 500.0) as u16;
+
+        let base_attack_speed = match self {
+            TowerType::Lich => 0.5,
+            TowerType::Zigurat => 0.4,
+            TowerType::Electric => 1.2,
+        };
+
+        let attack_speed = Timer::from_seconds(
+            (base_attack_speed * 0.95f32.powf(level as f32)).max(0.1),
+            TimerMode::Repeating,
+        );
 
         TowerInfo {
             attack_speed,
