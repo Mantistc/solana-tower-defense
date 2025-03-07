@@ -1,6 +1,5 @@
-pub mod cave;
 pub mod configs;
-
-pub use cave::*;
+pub mod map;
 
 pub use configs::*;
+pub use map::*;

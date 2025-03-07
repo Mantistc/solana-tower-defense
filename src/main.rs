@@ -1,21 +1,29 @@
-use bevy::{app::PluginGroupBuilder, prelude::*};
-use camera::CameraPlugin;
-use player::PlayerPlugin;
-use tilemap::{configs::{SCREEN_HEIGHT, SCREEN_WIDTH}, CaveTileMapPlugin};
-mod camera;
+use bevy::{app::PluginGroupBuilder, input::common_conditions::input_toggle_active, prelude::*};
+use bevy_ecs_tiled::prelude::*;
+use bevy_ecs_tilemap::prelude::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use enemies::EnemiesPlugin;
+use tilemap::{
+    configs::{SCREEN_HEIGHT, SCREEN_WIDTH},
+    TowerDefenseTilemapPlugin,
+};
+use tower_building::TowersPlugin;
+mod enemies;
 mod tilemap;
-mod player;
+mod tower_building;
 
 fn main() {
     App::new()
         .add_plugins(default_pluggins())
-        // tilemap plugins
-        .add_plugins((CameraPlugin, PlayerPlugin))
-        .add_plugins(CaveTileMapPlugin)
+        .add_plugins(TilemapPlugin)
+        .add_plugins(TiledMapPlugin::default())
+        .add_plugins(TowerDefenseTilemapPlugin)
+        .add_plugins(EnemiesPlugin)
+        .add_plugins(TowersPlugin)
         // world inspector plugin to check/change and test stuff in runtime
-        // .add_plugins(
-        //     WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Space)),
-        // )
+        .add_plugins(
+            WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Space)),
+        )
         .run();
 }
 
