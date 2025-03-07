@@ -1,38 +1,145 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::HashMap};
 
-use crate::tower_building::GameState;
+use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
-use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
+use super::{buy_tower, select_tower_type, shot_enemies, spawn_shots_to_attack, TowerInfo};
 
-pub const MAX_ENEMIES_PER_WAVE: u8 = 25;
-pub const SPAWN_Y_LOCATION: f32 = 150.0;
-pub const SPAWN_X_LOCATION: f32 = 610.0;
-pub const TIME_BETWEEN_WAVES: f32 = 15.0;
-pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
-pub const INITIAL_ENEMY_LIFE: u16 = 60;
-pub const SCALE: f32 = 2.0;
+pub struct TowersPlugin;
 
-#[derive(Resource, Debug)]
-pub struct WaveControl {
-    pub wave_count: u8,
-    pub time_between_spawns: Timer,
-    pub textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)>,
-    pub animations: Vec<EnemyAnimation>,
-    pub spawned_count_in_wave: u8,
-    pub time_between_waves: Timer,
+impl Plugin for TowersPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_state::<GameState>()
+            .insert_resource(Gold(130))
+            .insert_resource(Lifes(30))
+            .insert_resource(SelectedTowerType(TowerType::Lich))
+            .add_systems(Startup, load_towers_sprites)
+            // build systems
+            .add_systems(
+                Update,
+                (
+                    select_tower_type.run_if(in_state(GameState::Building)),
+                    buy_tower.run_if(in_state(GameState::Building)),
+                ),
+            )
+            // attack systems
+            .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
+    }
 }
 
-pub fn load_enemy_sprites(
+#[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
+pub enum GameState {
+    Building,
+    Attacking,
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        GameState::Building
+    }
+}
+
+#[derive(Resource, Debug, Deref, DerefMut)]
+pub struct Gold(pub u16);
+
+#[derive(Resource, Debug)]
+pub struct Lifes(pub u8);
+
+#[derive(Resource, Debug)]
+pub struct TowerControl {
+    // with this we can crontrol if in a specific position there is already a tower placed
+    pub placements: [u8; TOWER_POSITION_PLACEMENT.len()],
+    pub textures: HashMap<(TowerType, u8), (Handle<Image>, Handle<TextureAtlasLayout>)>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum TowerType {
+    Lich,
+    Zigurat,
+    Electric,
+}
+
+#[derive(Resource, Debug, Deref, DerefMut, Hash)]
+pub struct SelectedTowerType(pub TowerType);
+
+pub const COST_TABLE: [u16; 3] = [40, 80, 245];
+pub const INITIAL_TOWER_DAMAGE: [u16; 3] = [10, 25, 80];
+pub const TOWER_ATTACK_RANGE: f32 = 250.0;
+pub const DESPAWN_SHOT_RANGE: f32 = 800.0;
+pub const SHOT_HURT_DISTANCE: f32 = 700.0;
+pub const SHOT_SPEED: f32 = 700.0;
+pub const SCALAR: f32 = 0.5;
+
+pub const TOWER_POSITION_PLACEMENT: [Vec2; 14] = [
+    Vec2::new(17.0, 15.0),
+    Vec2::new(-110.0, 15.0),
+    Vec2::new(140.0, 15.0),
+    Vec2::new(-210.0, 270.0),
+    Vec2::new(-340.0, 270.0),
+    Vec2::new(-465.0, 270.0),
+    Vec2::new(-335.0, 65.0),
+    Vec2::new(-240.0, -230.0),
+    Vec2::new(17.0, -230.0),
+    Vec2::new(268.0, -230.0),
+    Vec2::new(400.0, 53.0),
+    Vec2::new(560.0, 53.0),
+    Vec2::new(400.0, 270.0),
+    Vec2::new(560.0, 270.0),
+];
+
+impl TowerType {
+    pub fn to_cost(&self, level: u8) -> u16 {
+        let base_cost = match self {
+            TowerType::Lich => COST_TABLE[0],
+            TowerType::Zigurat => COST_TABLE[1],
+            TowerType::Electric => COST_TABLE[2],
+        };
+
+        (base_cost as f32 * 1.3f32.powf(level as f32)).round() as u16
+    }
+
+    pub fn to_tower_data(&self, level: u8) -> TowerInfo {
+        let base_damage = match self {
+            TowerType::Lich => INITIAL_TOWER_DAMAGE[0],
+            TowerType::Zigurat => INITIAL_TOWER_DAMAGE[1],
+            TowerType::Electric => INITIAL_TOWER_DAMAGE[2],
+        };
+
+        let attack_damage = ((base_damage as f32) * (1.1 + SCALAR).powf(level as f32))
+            .round()
+            .clamp(1.0, 500.0) as u16;
+
+        let base_attack_speed = match self {
+            TowerType::Lich => 0.5,
+            TowerType::Zigurat => 0.4,
+            TowerType::Electric => 1.2,
+        };
+
+        let attack_speed = Timer::from_seconds(
+            (base_attack_speed * 0.95f32.powf(level as f32)).max(0.1),
+            TimerMode::Repeating,
+        );
+
+        TowerInfo {
+            attack_speed,
+            attack_damage,
+            level,
+            tower_type: self.clone(),
+        }
+    }
+}
+
+pub fn load_towers_sprites(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut commands: Commands,
 ) {
-    let mut textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)> = Vec::new();
+    let mut textures = HashMap::new();
     let mut animations: Vec<EnemyAnimation> = Vec::new();
 
-    let enemy_list = vec![
+    let tower_sprites = vec![
         (
-            "enemies/orcs.png",
+            (TowerType::Lich, 1),
+            "towers/lich_01_tower.png",
             UVec2::splat(48),
             8,
             6,
@@ -56,7 +163,8 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/soldier.png",
+            (TowerType::Lich, 2),
+            "towers/lich_01_tower.png",
             UVec2::new(43, 31),
             7,
             6,
@@ -80,7 +188,8 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/Leafbug.png",
+            (TowerType::Lich, 3),
+            "towers/lich_01_tower.png",
             UVec2::new(64, 64),
             8,
             9,
@@ -104,14 +213,15 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
+            (TowerType::Zigurat, 1),
+            "towers/zigurat_01_tower.png",
+            UVec2::new(64, 64),
+            8,
             9,
             EnemyAnimation {
                 walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
+                    first: 40,
+                    last: 47,
                     timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                 },
                 death: AnimateSprite {
@@ -128,14 +238,15 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
+            (TowerType::Zigurat, 2),
+            "towers/zigurat_01_tower.png",
+            UVec2::new(64, 64),
+            8,
             9,
             EnemyAnimation {
                 walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
+                    first: 40,
+                    last: 47,
                     timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                 },
                 death: AnimateSprite {
@@ -152,14 +263,15 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
+            (TowerType::Zigurat, 3),
+            "towers/zigurat_01_tower.png",
+            UVec2::new(64, 64),
+            8,
             9,
             EnemyAnimation {
                 walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
+                    first: 40,
+                    last: 47,
                     timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                 },
                 death: AnimateSprite {
@@ -176,14 +288,15 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
+            (TowerType::Electric, 1),
+            "towers/electric_01_tower.png",
+            UVec2::new(64, 64),
+            8,
             9,
             EnemyAnimation {
                 walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
+                    first: 40,
+                    last: 47,
                     timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                 },
                 death: AnimateSprite {
@@ -200,14 +313,15 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
+            (TowerType::Electric, 2),
+            "towers/electric_01_tower.png",
+            UVec2::new(64, 64),
+            8,
             9,
             EnemyAnimation {
                 walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
+                    first: 40,
+                    last: 47,
                     timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                 },
                 death: AnimateSprite {
@@ -224,62 +338,15 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
+            (TowerType::Electric, 3),
+            "towers/electric_01_tower.png",
+            UVec2::new(64, 64),
+            8,
             9,
             EnemyAnimation {
                 walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
+                    first: 40,
+                    last: 47,
                     timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                 },
                 death: AnimateSprite {
@@ -297,37 +364,17 @@ pub fn load_enemy_sprites(
         ),
     ];
 
-    for (path, tile_size, columns, row, animation) in enemy_list {
+    for (tower, path, tile_size, columns, row, animation) in tower_sprites {
         let texture = asset_server.load(path);
         let texture_atlas = TextureAtlasLayout::from_grid(tile_size, columns, row, None, None);
         let atlas_handle = texture_atlas_layouts.add(texture_atlas);
 
-        textures.push((texture, atlas_handle));
+        textures.insert(tower, (texture, atlas_handle));
         animations.push(animation);
     }
 
-    commands.insert_resource(WaveControl {
+    commands.insert_resource(TowerControl {
         textures,
-        animations,
-        wave_count: 0,
-        time_between_spawns: Timer::from_seconds(TIME_BETWEEN_SPAWNS, TimerMode::Repeating),
-        spawned_count_in_wave: 0,
-        time_between_waves: Timer::from_seconds(TIME_BETWEEN_WAVES, TimerMode::Once),
+        placements: [0; TOWER_POSITION_PLACEMENT.len()],
     });
-}
-
-pub fn control_first_wave(
-    time: Res<Time>,
-    mut wave_control: ResMut<WaveControl>,
-    mut game_state: ResMut<NextState<GameState>>,
-) {
-    if wave_control.wave_count == 0 {
-        wave_control.time_between_waves.tick(time.delta());
-        if wave_control.time_between_waves.just_finished() {
-            game_state.set(GameState::Attacking);
-            wave_control.time_between_waves.pause();
-            wave_control.time_between_waves.reset();
-            info!("fist wave controlled");
-        }
-    }
 }

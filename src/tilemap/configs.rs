@@ -1,7 +1,7 @@
 use bevy::prelude::Component;
 
-pub const SCREEN_WIDTH: f32 = 640.0;
-pub const SCREEN_HEIGHT: f32 = 320.0;
+pub const SCREEN_WIDTH: f32 = 1280.0;
+pub const SCREEN_HEIGHT: f32 = 640.0;
 
 #[derive(Component)]
 pub struct Collider;
