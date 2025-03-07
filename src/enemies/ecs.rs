@@ -69,8 +69,11 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
                 ..default()
             },
             Enemy {
-                life: INITIAL_ENEMY_LIFE * (wave_control.wave_count as u16 + 1),
-                speed: 75.0 * (1.0 + 0.3f32).powf(wave_control.wave_count as f32),
+                life: (INITIAL_ENEMY_LIFE as f32
+                    * (1.2 + SCALAR).powf(wave_control.wave_count as f32))
+                .round() as u16,
+
+                speed: (75.0 * (1.05f32).powf(wave_control.wave_count as f32)).min(300.0),
             },
             enemy_animation.clone(),
             BreakPointLvl(0),
