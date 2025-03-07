@@ -1,10 +1,10 @@
-use bevy::{input::keyboard::Key, prelude::*};
+use bevy::prelude::*;
 
 use super::{Gold, SelectedTowerType, TowerControl, TowerType, TOWER_POSITION_PLACEMENT};
 
 #[derive(Debug, Clone)]
 pub struct TowerInfo {
-    pub attack_damage: u8,
+    pub attack_damage: u16,
     pub attack_speed: Timer,
     pub level: u8,
     pub tower_type: TowerType,

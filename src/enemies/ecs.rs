@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-use crate::tower_building::{GameState, Lifes};
+use crate::tower_building::{GameState, Lifes, SCALAR};
 
 use super::{
-    animate, control_first_wave, load_enemy_sprites, WaveControl, MAX_ENEMIES_PER_WAVE, SCALE,
-    SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
+    animate, control_first_wave, load_enemy_sprites, WaveControl, INITIAL_ENEMY_LIFE,
+    MAX_ENEMIES_PER_WAVE, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
 
 // define plugin
@@ -34,7 +34,7 @@ impl Plugin for EnemiesPlugin {
 
 #[derive(Component)]
 pub struct Enemy {
-    pub life: u8,
+    pub life: u16,
     pub speed: f32,
 }
 
@@ -69,8 +69,8 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
                 ..default()
             },
             Enemy {
-                life: 50 * (wave_control.wave_count + 1),
-                speed: 75.0,
+                life: INITIAL_ENEMY_LIFE * (wave_control.wave_count as u16 + 1),
+                speed: 75.0 * (1.0 + 0.3f32).powf(wave_control.wave_count as f32),
             },
             enemy_animation.clone(),
             BreakPointLvl(0),

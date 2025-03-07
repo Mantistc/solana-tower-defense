@@ -4,11 +4,13 @@ use crate::tower_building::GameState;
 
 use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
-pub const MAX_ENEMIES_PER_WAVE: u8 = 10;
+pub const MAX_ENEMIES_PER_WAVE: u8 = 25;
 pub const SPAWN_Y_LOCATION: f32 = 150.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
-pub const TIME_BETWEEN_WAVES: f32 = 5.0;
+pub const TIME_BETWEEN_WAVES: f32 = 15.0;
 pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
+pub const INITIAL_ENEMY_LIFE: u16 = 60;
+pub const GOLD_PER_ENEMY: u16 = 5;
 pub const SCALE: f32 = 2.0;
 
 #[derive(Resource, Debug)]
@@ -87,6 +89,174 @@ pub fn load_enemy_sprites(
                 walk: AnimateSprite {
                     first: 40,
                     last: 47,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            "enemies/Firebug.png",
+            UVec2::new(128, 64),
+            11,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            "enemies/Firebug.png",
+            UVec2::new(128, 64),
+            11,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            "enemies/Firebug.png",
+            UVec2::new(128, 64),
+            11,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            "enemies/Firebug.png",
+            UVec2::new(128, 64),
+            11,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            "enemies/Firebug.png",
+            UVec2::new(128, 64),
+            11,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            "enemies/Firebug.png",
+            UVec2::new(128, 64),
+            11,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                hurt: AnimateSprite {
+                    first: 55,
+                    last: 62,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            "enemies/Firebug.png",
+            UVec2::new(128, 64),
+            11,
+            9,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 55,
+                    last: 62,
                     timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                 },
                 death: AnimateSprite {

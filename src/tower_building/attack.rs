@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    enemies::{BreakPointLvl, Enemy, BREAK_POINTS},
+    enemies::{BreakPointLvl, Enemy, BREAK_POINTS, GOLD_PER_ENEMY},
     tower_building::{DESPAWN_SHOT_RANGE, SHOT_HURT_DISTANCE, SHOT_SPEED},
 };
 
@@ -10,7 +10,7 @@ use super::{Gold, Tower, TOWER_ATTACK_RANGE};
 #[derive(Component)]
 pub struct Shot {
     pub direction: Vec3,
-    pub damage: u8,
+    pub damage: u16,
 }
 
 pub fn spawn_shots_to_attack(
@@ -98,23 +98,34 @@ pub fn shot_enemies(
     time: Res<Time>,
 ) {
     for (shot_entity, mut transform, shot) in &mut shots {
-        transform.translation += shot.direction * SHOT_SPEED * time.delta_secs();
+        let mut hit_enemy = None;
+        let mut closest_distance = f32::MAX;
 
-        if transform.translation.x > DESPAWN_SHOT_RANGE {
-            commands.entity(shot_entity).despawn();
+        let next_position = transform.translation + shot.direction * SHOT_SPEED * time.delta_secs();
+
+        for (enemy_entity, enemy_transform, enemy) in &mut enemies {
+            let enemy_position = enemy_transform.translation;
+            let distance = next_position.distance_squared(enemy_position);
+
+            if distance <= SHOT_HURT_DISTANCE && distance < closest_distance {
+                hit_enemy = Some((enemy_entity, enemy));
+                closest_distance = distance;
+            }
         }
 
-        let shot_position = transform.translation;
-        for (enemy_entity, enemy_transform, mut enemy) in &mut enemies {
-            let enemy_position = enemy_transform.translation;
-            let distance = shot_position.distance_squared(enemy_position);
-            if distance <= SHOT_HURT_DISTANCE {
+        if let Some((enemy_entity, mut enemy)) = hit_enemy {
+            commands.entity(shot_entity).despawn();
+            enemy.life = enemy.life.saturating_sub(shot.damage);
+
+            if enemy.life <= 0 {
+                commands.entity(enemy_entity).despawn();
+                gold.0 += GOLD_PER_ENEMY;
+            }
+        } else {
+            transform.translation = next_position;
+
+            if transform.translation.x > DESPAWN_SHOT_RANGE {
                 commands.entity(shot_entity).despawn();
-                enemy.life = enemy.life.saturating_sub(shot.damage);
-                if enemy.life <= 0 {
-                    commands.entity(enemy_entity).despawn();
-                    gold.0 += 5;
-                }
             }
         }
     }
