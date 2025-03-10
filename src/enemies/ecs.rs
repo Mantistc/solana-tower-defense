@@ -1,3 +1,14 @@
+//! The `enemies` module manages all logic in the `ecs.rs` file since all waves share the same mechanics.
+//! The difficulty of each wave increases deterministically, so we only need to implement algorithms
+//! for spawning and wave control over time.
+//!
+//! In the `tower_building` module, we don't have a dedicated `ecs.rs` file because tower mechanics
+//! consist of two distinct processes:
+//! 1️) **Building** - Placing and upgrading towers.
+//! 2️) **Attacking** - Managing tower targeting and shooting behavior.
+//!
+//! These processes require separate handling to ensure proper management and scalability.
+
 use bevy::prelude::*;
 
 use crate::tower_building::{GameState, Lifes, SCALAR};

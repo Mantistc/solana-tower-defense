@@ -1,3 +1,6 @@
+//! Basics configs of the wave control, here we declare all the require stuff to manage
+//! each wave control. Sprites, constants, etc.
+
 use bevy::prelude::*;
 
 use crate::tower_building::GameState;
@@ -12,6 +15,8 @@ pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
 pub const INITIAL_ENEMY_LIFE: u16 = 60;
 pub const SCALE: f32 = 2.0;
 
+/// This Resource manage how fast each enemy will spawn, their textures, wave count, animations, etc.
+/// We can access globally to this resource to check/validate each wave data.
 #[derive(Resource, Debug)]
 pub struct WaveControl {
     pub wave_count: u8,
