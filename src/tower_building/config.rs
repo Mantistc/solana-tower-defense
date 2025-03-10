@@ -1,8 +1,13 @@
-use bevy::{prelude::*, utils::HashMap};
-
-use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
+//! This module handles all configurations related to tower building logic, including:
+//! 1️) **Constants** – Defining core values for towers.
+//! 2️) **Resources** – Managing shared game data for towers.
+//! 3️) **Sprite Loading Logic** – Handling assets for tower visuals.
+//!
+//! This file is responsible for defining all startup processes related to tower building and attacking.
 
 use super::{buy_tower, select_tower_type, shot_enemies, spawn_shots_to_attack, TowerInfo};
+use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
+use bevy::{prelude::*, utils::HashMap};
 
 pub struct TowersPlugin;
 
