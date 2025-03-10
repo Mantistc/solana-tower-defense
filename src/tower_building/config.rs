@@ -6,7 +6,8 @@
 //! This file is responsible for defining all startup processes related to tower building and attacking.
 
 use super::{
-    buy_tower, select_tower_type, setup_tower_zones, shot_enemies, spawn_shots_to_attack, TowerInfo,
+    buy_tower, reset_hover_color_in_attacking, select_tower_type, setup_tower_zones, shot_enemies,
+    spawn_shots_to_attack, TowerInfo,
 };
 use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 use bevy::{prelude::*, utils::HashMap};
@@ -25,6 +26,10 @@ impl Plugin for TowersPlugin {
                 Update,
                 ((select_tower_type, setup_tower_zones, buy_tower)
                     .run_if(in_state(GameState::Building)),),
+            )
+            .add_systems(
+                Update,
+                reset_hover_color_in_attacking.run_if(in_state(GameState::Attacking)),
             )
             // attack systems
             .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
