@@ -45,9 +45,11 @@ pub fn buy_tower(
                             sprite.color = if in_range && gold.0 >= tower_cost {
                                 info!("gold: {:?}", gold.0);
                                 Color::srgba(0.0, 1.0, 0.0, 0.5)
+                            } else if in_range && gold.0 < tower_cost {
+                                Color::srgba(1.0, 0.0, 0.0, 0.5)
                             } else {
                                 info!("gold: {:?}", gold.0);
-                                Color::srgba(0.0, 1.0, 0.0, 0.0)
+                                Color::srgba(0.0, 0.0, 0.0, 0.0)
                             };
                         }
                     }
