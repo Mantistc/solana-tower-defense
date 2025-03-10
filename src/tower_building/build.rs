@@ -127,3 +127,11 @@ pub fn setup_tower_zones(mut commands: Commands, mut tower_control: ResMut<Tower
         tower_control.zones.push(entity);
     }
 }
+
+pub fn reset_hover_color_in_attacking(
+    mut placement_zones: Query<&mut Sprite, With<TowerPlacementZone>>,
+) {
+    for mut placements in &mut placement_zones {
+        placements.color = Color::srgba(0.0, 1.0, 0.0, 0.0);
+    }
+}
