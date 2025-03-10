@@ -21,6 +21,7 @@ pub fn buy_tower(
     mut tower_control: ResMut<TowerControl>,
     mut gold: ResMut<Gold>,
     selected_tower_type: Res<SelectedTowerType>,
+    mut placement_zones: Query<(&Transform, &mut Sprite), With<TowerPlacementZone>>,
 ) {
     let window = windows.single();
     let range = 32.0;
@@ -31,41 +32,54 @@ pub fn buy_tower(
             {
                 let cursor_world_pos = world_position.origin.truncate(); // Vec2
                 for (i, placement) in TOWER_POSITION_PLACEMENT.iter().enumerate() {
-                    if cursor_world_pos.x >= placement.x - range
+                    let in_range = cursor_world_pos.x >= placement.x - range
                         && cursor_world_pos.x <= placement.x + range
                         && cursor_world_pos.y >= placement.y - range
-                        && cursor_world_pos.y <= placement.y + range
+                        && cursor_world_pos.y <= placement.y + range;
+
+                    let tower_level = 1;
+                    let tower_cost = selected_tower_type.to_cost(tower_level);
+
+                    if let Some(&zone_entity) = tower_control.zones.get(i) {
+                        if let Ok((_, mut sprite)) = placement_zones.get_mut(zone_entity) {
+                            sprite.color = if in_range && gold.0 >= tower_cost {
+                                info!("gold: {:?}", gold.0);
+                                Color::srgba(0.0, 1.0, 0.0, 0.5)
+                            } else {
+                                info!("gold: {:?}", gold.0);
+                                Color::srgba(0.0, 1.0, 0.0, 0.0)
+                            };
+                        }
+                    }
+
+                    if in_range
+                        && tower_control.placements[i] == 0
+                        && buttons.just_pressed(MouseButton::Left)
+                        && gold.0 >= tower_cost
                     {
-                        if tower_control.placements[i] == 0
-                            && buttons.just_pressed(MouseButton::Left)
+                        let tower = Tower(selected_tower_type.to_tower_data(tower_level));
+
+                        if gold.0 < tower_cost {
+                            return;
+                        }
+
+                        if let Some(texture) = tower_control
+                            .textures
+                            .get(&(selected_tower_type.0.clone(), tower_level))
                         {
-                            let tower_level = 1;
-                            let tower_cost = selected_tower_type.to_cost(tower_level);
-                            let tower = Tower(selected_tower_type.to_tower_data(tower_level));
-
-                            if gold.0 < tower_cost {
-                                info!("gold: {:?}", gold.0);
-                                return;
-                            }
-
-                            if let Some(texture) = tower_control
-                                .textures
-                                .get(&(selected_tower_type.0.clone(), tower_level))
-                            {
-                                commands.spawn((
-                                    Sprite::from_image(texture.0.clone()),
-                                    tower,
-                                    Transform {
-                                        translation: Vec3::new(placement.x, placement.y, 1.0),
-                                        scale: Vec3::splat(2.0),
-                                        ..default()
-                                    },
-                                ));
-                                tower_control.placements[i] = 1;
-                                gold.0 -= tower_cost;
-                                info!("gold: {:?}", gold.0);
-                                break;
-                            }
+                            commands.spawn((
+                                Sprite::from_image(texture.0.clone()),
+                                tower,
+                                Transform {
+                                    translation: Vec3::new(placement.x, placement.y, 1.0),
+                                    scale: Vec3::splat(2.0),
+                                    ..default()
+                                },
+                            ));
+                            tower_control.placements[i] = 1;
+                            gold.0 -= tower_cost;
+                            info!("gold: {:?}", gold.0);
+                            break;
                         }
                     }
                 }
@@ -88,5 +102,28 @@ pub fn select_tower_type(
     }
     if input.just_pressed(KeyCode::KeyL) {
         selected_tower_type.0 = TowerType::Lich;
+    }
+}
+
+#[derive(Component)]
+pub struct TowerPlacementZone;
+
+pub fn setup_tower_zones(mut commands: Commands, mut tower_control: ResMut<TowerControl>) {
+    for placement in TOWER_POSITION_PLACEMENT.iter() {
+        let entity = commands
+            .spawn((
+                Sprite {
+                    color: Color::srgba(0.0, 1.0, 0.0, 0.0),
+                    custom_size: Some(Vec2::splat(64.0)),
+                    ..default()
+                },
+                Transform {
+                    translation: Vec3::new(placement.x, placement.y, 0.5),
+                    ..default()
+                },
+                TowerPlacementZone,
+            ))
+            .id();
+        tower_control.zones.push(entity);
     }
 }

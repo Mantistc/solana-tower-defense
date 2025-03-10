@@ -5,7 +5,9 @@
 //!
 //! This file is responsible for defining all startup processes related to tower building and attacking.
 
-use super::{buy_tower, select_tower_type, shot_enemies, spawn_shots_to_attack, TowerInfo};
+use super::{
+    buy_tower, select_tower_type, setup_tower_zones, shot_enemies, spawn_shots_to_attack, TowerInfo,
+};
 use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 use bevy::{prelude::*, utils::HashMap};
 
@@ -21,10 +23,8 @@ impl Plugin for TowersPlugin {
             // build systems
             .add_systems(
                 Update,
-                (
-                    select_tower_type.run_if(in_state(GameState::Building)),
-                    buy_tower.run_if(in_state(GameState::Building)),
-                ),
+                ((select_tower_type, setup_tower_zones, buy_tower)
+                    .run_if(in_state(GameState::Building)),),
             )
             // attack systems
             .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
@@ -54,6 +54,7 @@ pub struct TowerControl {
     // with this we can crontrol if in a specific position there is already a tower placed
     pub placements: [u8; TOWER_POSITION_PLACEMENT.len()],
     pub textures: HashMap<(TowerType, u8), (Handle<Image>, Handle<TextureAtlasLayout>)>,
+    pub zones: Vec<Entity>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -381,5 +382,6 @@ pub fn load_towers_sprites(
     commands.insert_resource(TowerControl {
         textures,
         placements: [0; TOWER_POSITION_PLACEMENT.len()],
+        zones: [].to_vec(),
     });
 }
