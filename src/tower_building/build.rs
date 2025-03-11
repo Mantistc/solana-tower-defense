@@ -1,9 +1,7 @@
-use std::any::Any;
-
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::*;
 
-use crate::tilemap::{SCREEN_HEIGHT, TILE_SIZE};
+use crate::tilemap::TILE_SIZE;
 
 use super::{Gold, SelectedTowerType, TowerControl, TowerType, TOWER_POSITION_PLACEMENT};
 
@@ -52,7 +50,7 @@ pub fn buy_tower(
                             } else if in_range && gold.0 < tower_cost {
                                 Color::srgba(1.0, 0.0, 0.0, 0.5)
                             } else {
-                                Color::srgba(0.0, 0.0, 0.0, 0.5)
+                                Color::srgba(0.0, 0.0, 0.0, 0.0)
                             };
                         }
                     }
@@ -74,7 +72,7 @@ pub fn buy_tower(
                             .get(&(selected_tower_type.0.clone(), tower_level))
                         {
                             commands.spawn((
-                                Sprite::from_image(texture.0.clone()),
+                                Sprite::from_image(texture.clone()),
                                 tower,
                                 Transform {
                                     translation: Vec3::new(placement.x, placement.y, 1.0),
@@ -126,7 +124,7 @@ pub fn upgrade_tower(
                             if let Some(texture) =
                                 tower_control.textures.get(&(tower_type, next_lvl))
                             {
-                                sprite.image = texture.0.clone();
+                                sprite.image = texture.clone();
                                 info!(
                                     "gold before up: {:?}, tower damage before up {:?}, attack speed: {:?}",
                                     gold.0, tower.attack_damage, tower.attack_speed
@@ -176,7 +174,7 @@ pub struct TowerPlacementZone;
 pub fn setup_tower_zones(
     mut commands: Commands,
     mut tower_control: ResMut<TowerControl>,
-    existing_zones: Query<&Transform, With<TowerPlacementZone>>, // 🔥 Verifica zonas ya existentes
+    existing_zones: Query<&Transform, With<TowerPlacementZone>>,
 ) {
     for placement in TOWER_POSITION_PLACEMENT.iter() {
         let placement_pos = Vec3::new(placement.x, placement.y, 0.5);
@@ -191,7 +189,7 @@ pub fn setup_tower_zones(
         let entity = commands
             .spawn((
                 Sprite {
-                    color: Color::srgba(0.0, 0.0, 0.0, 0.5),
+                    color: Color::srgba(0.0, 0.0, 0.0, 0.0),
                     custom_size: Some(Vec2::splat(64.0)),
                     ..default()
                 },
@@ -210,11 +208,12 @@ pub fn reset_hover_color_in_attacking(
     mut placement_zones: Query<&mut Sprite, With<TowerPlacementZone>>,
 ) {
     for mut placements in &mut placement_zones {
-        placements.color = Color::srgba(0.0, 0.0, 0.0, 0.5);
+        placements.color = Color::srgba(0.0, 0.0, 0.0, 0.0);
     }
 }
 
-pub fn set_attack_points(
+// TODO: set the attack points based on the specific layer of the tiled map provided
+pub fn _set_attack_points(
     trigger: Trigger<TiledLayerCreated>,
     map_asset: Res<Assets<TiledMap>>,
     mut commands: Commands,
@@ -236,8 +235,8 @@ pub fn set_attack_points(
                         info!("world_x {}: world_y {}", world_x, world_y);
                         commands.spawn((
                             Sprite {
-                                color: Color::srgba(0.0, 0.0, 0.0, 0.5),
-                                custom_size: Some(Vec2::splat(TILE_SIZE)),
+                                color: Color::srgba(0.0, 0.0, 0.0, 0.0),
+                                custom_size: Some(Vec2::splat(TILE_SIZE * 2.0)),
                                 ..default()
                             },
                             TowerPlacementZone,

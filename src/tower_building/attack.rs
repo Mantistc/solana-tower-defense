@@ -29,7 +29,7 @@ pub fn spawn_shots_to_attack(
         let mut closest_distance_to_target = f32::MAX;
 
         // the higher breakpoint lvl, the close is the enemy to the victory
-        // so, we needs to filter all enemies that are in the attack range
+        // so, we need to filter all enemies that are in the attack range
         // then, take all of the higher breakpoint lvl
         // then take the closest to the breakpoint
 
