@@ -6,7 +6,6 @@
 //! This file is responsible for defining all startup processes related to tower building and attacking.
 
 use super::*;
-use crate::enemies::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 use bevy::{prelude::*, utils::HashMap};
 
 pub struct TowersPlugin;
@@ -23,7 +22,7 @@ impl Plugin for TowersPlugin {
                 Update,
                 ((
                     select_tower_type,
-                    // setup_tower_zones,
+                    setup_tower_zones,
                     buy_tower,
                     upgrade_tower,
                 )
@@ -34,8 +33,7 @@ impl Plugin for TowersPlugin {
                 reset_hover_color_in_attacking.run_if(in_state(GameState::Attacking)),
             )
             // attack systems
-            .add_systems(Update, (spawn_shots_to_attack, shot_enemies))
-            .add_observer(set_attack_points);
+            .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
     }
 }
 
@@ -86,9 +84,12 @@ pub struct Lifes(pub u8);
 
 #[derive(Resource, Debug)]
 pub struct TowerControl {
-    // with this we can crontrol if in a specific position there is already a tower placed
+    /// Control if in a specific position there is already a `tower` placed.
     pub placements: [u8; TOWER_POSITION_PLACEMENT.len()],
-    pub textures: HashMap<(TowerType, u8), (Handle<Image>, Handle<TextureAtlasLayout>)>,
+    /// Each tower has an image based on the tower lvl, so, we just stored at the startup, then we use it when
+    /// spawn/upgrade a tower.
+    pub textures: HashMap<(TowerType, u8), Handle<Image>>,
+    /// This `zones` entities help to determine/verify the places where is available to place a tower.
     pub zones: Vec<Entity>,
 }
 
@@ -146,249 +147,24 @@ impl TowerType {
     }
 }
 
-pub fn load_towers_sprites(
-    asset_server: Res<AssetServer>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-    mut commands: Commands,
-) {
+pub fn load_towers_sprites(asset_server: Res<AssetServer>, mut commands: Commands) {
     let mut textures = HashMap::new();
-    let mut animations: Vec<EnemyAnimation> = Vec::new();
 
     let tower_sprites = vec![
-        (
-            (TowerType::Lich, 1),
-            "towers/lich_01_tower.png",
-            UVec2::splat(48),
-            8,
-            6,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            (TowerType::Lich, 2),
-            "towers/lich_02_tower.png",
-            UVec2::new(43, 31),
-            7,
-            6,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 0,
-                    last: 6,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            (TowerType::Lich, 3),
-            "towers/lich_01_tower.png",
-            UVec2::new(64, 64),
-            8,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            (TowerType::Zigurat, 1),
-            "towers/zigurat_01_tower.png",
-            UVec2::new(64, 64),
-            8,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            (TowerType::Zigurat, 2),
-            "towers/zigurat_02_tower.png",
-            UVec2::new(64, 64),
-            8,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            (TowerType::Zigurat, 3),
-            "towers/zigurat_01_tower.png",
-            UVec2::new(64, 64),
-            8,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            (TowerType::Electric, 1),
-            "towers/electric_01_tower.png",
-            UVec2::new(64, 64),
-            8,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            (TowerType::Electric, 2),
-            "towers/electric_02_tower.png",
-            UVec2::new(64, 64),
-            8,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            (TowerType::Electric, 3),
-            "towers/electric_01_tower.png",
-            UVec2::new(64, 64),
-            8,
-            9,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                hurt: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
+        ((TowerType::Lich, 1), "towers/lich_01_tower.png"),
+        ((TowerType::Lich, 2), "towers/lich_02_tower.png"),
+        ((TowerType::Lich, 3), "towers/lich_01_tower.png"),
+        ((TowerType::Zigurat, 1), "towers/zigurat_01_tower.png"),
+        ((TowerType::Zigurat, 2), "towers/zigurat_02_tower.png"),
+        ((TowerType::Zigurat, 3), "towers/zigurat_01_tower.png"),
+        ((TowerType::Electric, 1), "towers/electric_01_tower.png"),
+        ((TowerType::Electric, 2), "towers/electric_02_tower.png"),
+        ((TowerType::Electric, 3), "towers/electric_01_tower.png"),
     ];
 
-    for (tower, path, tile_size, columns, row, animation) in tower_sprites {
+    for (tower, path) in tower_sprites {
         let texture = asset_server.load(path);
-        let texture_atlas = TextureAtlasLayout::from_grid(tile_size, columns, row, None, None);
-        let atlas_handle = texture_atlas_layouts.add(texture_atlas);
-
-        textures.insert(tower, (texture, atlas_handle));
-        animations.push(animation);
+        textures.insert(tower, texture);
     }
 
     commands.insert_resource(TowerControl {

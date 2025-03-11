@@ -11,7 +11,6 @@ pub struct AnimateSprite {
 pub struct EnemyAnimation {
     pub walk: AnimateSprite,
     pub death: AnimateSprite,
-    pub hurt: AnimateSprite,
     pub state: EnemyAnimationState,
 }
 
@@ -19,7 +18,6 @@ pub struct EnemyAnimation {
 pub enum EnemyAnimationState {
     Walk,
     Death,
-    Hurt,
 }
 
 pub fn animate(
@@ -30,7 +28,6 @@ pub fn animate(
         let animation = match enemy_animation.state {
             EnemyAnimationState::Walk => &mut enemy_animation.walk,
             EnemyAnimationState::Death => &mut enemy_animation.death,
-            EnemyAnimationState::Hurt => &mut enemy_animation.hurt,
         };
         animation.timer.tick(time.delta());
 
