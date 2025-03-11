@@ -1,4 +1,9 @@
+use std::any::Any;
+
 use bevy::prelude::*;
+use bevy_ecs_tiled::prelude::*;
+
+use crate::tilemap::{SCREEN_HEIGHT, TILE_SIZE};
 
 use super::{Gold, SelectedTowerType, TowerControl, TowerType, TOWER_POSITION_PLACEMENT};
 
@@ -47,7 +52,7 @@ pub fn buy_tower(
                             } else if in_range && gold.0 < tower_cost {
                                 Color::srgba(1.0, 0.0, 0.0, 0.5)
                             } else {
-                                Color::srgba(0.0, 0.0, 0.0, 0.0)
+                                Color::srgba(0.0, 0.0, 0.0, 0.5)
                             };
                         }
                     }
@@ -186,7 +191,7 @@ pub fn setup_tower_zones(
         let entity = commands
             .spawn((
                 Sprite {
-                    color: Color::srgba(0.0, 1.0, 0.0, 0.0),
+                    color: Color::srgba(0.0, 0.0, 0.0, 0.5),
                     custom_size: Some(Vec2::splat(64.0)),
                     ..default()
                 },
@@ -205,6 +210,47 @@ pub fn reset_hover_color_in_attacking(
     mut placement_zones: Query<&mut Sprite, With<TowerPlacementZone>>,
 ) {
     for mut placements in &mut placement_zones {
-        placements.color = Color::srgba(0.0, 1.0, 0.0, 0.0);
+        placements.color = Color::srgba(0.0, 0.0, 0.0, 0.5);
+    }
+}
+
+pub fn set_attack_points(
+    trigger: Trigger<TiledLayerCreated>,
+    map_asset: Res<Assets<TiledMap>>,
+    mut commands: Commands,
+) {
+    let layer = trigger.event().layer(&map_asset);
+    if layer.name == "attack_points" {
+        if let Some(tile_layer) = layer.as_tile_layer() {
+            let width = tile_layer.width().unwrap_or(0);
+            let height = tile_layer.height().unwrap_or(0);
+            info!("attack_points dimensions: w={}, h={}", width, height);
+
+            for y in 0..height {
+                for x in 0..width {
+                    if let Some(tile) = tile_layer.get_tile(x as i32, y as i32) {
+                        let tile_gid = tile.id();
+                        let world_x = ((x as f32 + 1f32) - 20f32) * TILE_SIZE * 2.0;
+                        let world_y = (y as f32 - 10f32) * TILE_SIZE * 2.0;
+
+                        info!("world_x {}: world_y {}", world_x, world_y);
+                        commands.spawn((
+                            Sprite {
+                                color: Color::srgba(0.0, 0.0, 0.0, 0.5),
+                                custom_size: Some(Vec2::splat(TILE_SIZE)),
+                                ..default()
+                            },
+                            TowerPlacementZone,
+                            Transform {
+                                translation: Vec3::new(world_x, -world_y, 0.5),
+                                ..default()
+                            },
+                        ));
+
+                        info!("tile {} at position ({}, {})", tile_gid, x, y);
+                    }
+                }
+            }
+        }
     }
 }
