@@ -28,10 +28,10 @@ pub fn spawn_shots_to_attack(
         let mut target_enemy_position = None;
         let mut closest_distance_to_target = f32::MAX;
 
-        // the higher breakpoint lvl, the close to the victory
+        // the higher breakpoint lvl, the close is the enemy to the victory
         // so, we needs to filter all enemies that are in the attack range
         // then, take all of the higher breakpoint lvl
-        // then take the closer to the breakpoint
+        // then take the closest to the breakpoint
 
         let enemies_in_range: Vec<(&Transform, &BreakPointLvl, Entity)> = enemies
             .iter()
@@ -49,6 +49,7 @@ pub fn spawn_shots_to_attack(
             .map(|(_, b, _)| b)
             .max()
             .unwrap_or(&BreakPointLvl(0));
+
         // get all the enemies with this max break lvl
         let closer_enemies_to_victory: Vec<(&Transform, &BreakPointLvl, Entity)> = enemies_in_range
             .iter()
@@ -56,12 +57,13 @@ pub fn spawn_shots_to_attack(
             .copied()
             .collect();
 
-        // get the closer enemy to the break point lvl
+        // get the closest enemy to the break point lvl
         let mut closest_enemy = None;
         for (enemy_transform, break_point_lvl, enemy_entity) in &closer_enemies_to_victory {
             let index = break_point_lvl.0 as usize;
             let enemy_position = enemy_transform.translation;
             let distance_to_target = enemy_position.truncate().distance(BREAK_POINTS[index]);
+
             if distance_to_target < closest_distance_to_target {
                 closest_distance_to_target = distance_to_target;
                 target_enemy_position = Some(enemy_position);
@@ -105,16 +107,16 @@ pub fn shot_enemies(
     for (shot_entity, mut transform, shot) in &mut shots {
         let mut hit_enemy = None;
         let mut closest_distance = f32::MAX;
-
+        let next_position = shot.direction * SHOT_SPEED * time.delta_secs();
         if let Some(target_entity) = shot.target {
             if let Ok((_, enemy_transform, _)) = enemies.get(target_entity) {
                 let direction = (enemy_transform.translation - transform.translation).normalize();
                 transform.translation += direction * SHOT_SPEED * time.delta_secs();
             } else {
-                transform.translation += shot.direction * SHOT_SPEED * time.delta_secs();
+                transform.translation += next_position;
             }
         } else {
-            transform.translation += shot.direction * SHOT_SPEED * time.delta_secs();
+            transform.translation += next_position;
         }
 
         for (enemy_entity, enemy_transform, enemy) in &mut enemies {

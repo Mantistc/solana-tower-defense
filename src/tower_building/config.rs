@@ -23,7 +23,7 @@ impl Plugin for TowersPlugin {
                 Update,
                 ((
                     select_tower_type,
-                    setup_tower_zones,
+                    // setup_tower_zones,
                     buy_tower,
                     upgrade_tower,
                 )
@@ -34,7 +34,8 @@ impl Plugin for TowersPlugin {
                 reset_hover_color_in_attacking.run_if(in_state(GameState::Attacking)),
             )
             // attack systems
-            .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
+            .add_systems(Update, (spawn_shots_to_attack, shot_enemies))
+            .add_observer(set_attack_points);
     }
 }
 

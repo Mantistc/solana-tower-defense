@@ -35,7 +35,7 @@ fn default_pluggins() -> PluginGroupBuilder {
             primary_window: Some(Window {
                 title: "Veralt".into(),
                 resolution: (SCREEN_WIDTH, SCREEN_HEIGHT).into(),
-                resizable: true,
+                // resizable: true,
                 ..default()
             }),
             ..default()
