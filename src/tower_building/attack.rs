@@ -12,6 +12,7 @@ pub struct Shot {
     pub direction: Vec3,
     pub damage: u16,
     pub target: Option<Entity>,
+    pub animation_timer: Timer,
 }
 
 pub fn spawn_shots_to_attack(
@@ -20,6 +21,7 @@ pub fn spawn_shots_to_attack(
     mut commands: Commands,
     time: Res<Time>,
     asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     for (tower_transform, mut tower) in &mut towers {
         let tower_position = tower_transform.translation;
@@ -78,13 +80,21 @@ pub fn spawn_shots_to_attack(
                     direction,
                     damage: tower.attack_damage,
                     target: Some(*closest_enemy.unwrap()),
+                    animation_timer: Timer::from_seconds(0.05, TimerMode::Repeating),
                 };
                 let texture = asset_server.load("towers/lich_01_shot.png");
+                let texture_atlas =
+                    TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 1, None, None);
+                let atlas_handle = texture_atlas_layouts.add(texture_atlas);
+
                 commands.spawn((
-                    Sprite {
-                        custom_size: Some(Vec2::new(64.0, 64.0)),
-                        ..Sprite::from_image(texture)
-                    },
+                    Sprite::from_atlas_image(
+                        texture,
+                        TextureAtlas {
+                            layout: atlas_handle,
+                            index: 0,
+                        },
+                    ),
                     shot,
                     Transform {
                         translation: Vec3::new(tower_position.x, tower_position.y, 1.5),
@@ -98,16 +108,22 @@ pub fn spawn_shots_to_attack(
 
 pub fn shot_enemies(
     mut enemies: Query<(Entity, &Transform, &mut Enemy), Without<Shot>>,
-    mut shots: Query<(Entity, &mut Transform, &mut Shot)>,
+    mut shots: Query<(Entity, &mut Transform, &mut Shot, &mut Sprite)>,
     mut commands: Commands,
     mut gold: ResMut<Gold>,
     time: Res<Time>,
     wave_control: Res<WaveControl>,
 ) {
-    for (shot_entity, mut transform, shot) in &mut shots {
+    for (shot_entity, mut transform, mut shot, mut shot_sprite) in &mut shots {
+        shot.animation_timer.tick(time.delta());
         let mut hit_enemy = None;
         let mut closest_distance = f32::MAX;
         let next_position = shot.direction * SHOT_SPEED * time.delta_secs();
+
+        if transform.translation.x > DESPAWN_SHOT_RANGE {
+            commands.entity(shot_entity).despawn();
+        }
+
         if let Some(target_entity) = shot.target {
             if let Ok((_, enemy_transform, _)) = enemies.get(target_entity) {
                 let direction = (enemy_transform.translation - transform.translation).normalize();
@@ -116,6 +132,11 @@ pub fn shot_enemies(
                 transform.translation += next_position;
             }
         } else {
+            if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
+                if shot.animation_timer.just_finished() {
+                    shot_texture_atlas.index = 0;
+                }
+            }
             transform.translation += next_position;
         }
 
@@ -130,19 +151,31 @@ pub fn shot_enemies(
         }
 
         if let Some((enemy_entity, mut enemy)) = hit_enemy {
-            commands.entity(shot_entity).despawn();
-            enemy.life = enemy.life.saturating_sub(shot.damage);
-            if enemy.life <= 0 {
-                commands.entity(enemy_entity).despawn();
-
-                let wave_factor = wave_control.wave_count as f32 + 1.0;
-                let gold_reward = ((enemy.life as f32 / 2.5) + (wave_factor * 2.0)).round() as u16;
-
-                gold.0 += gold_reward;
-                info!("Enemy killed! Gained {} gold.", gold_reward);
+            if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
+                if shot.animation_timer.just_finished() {
+                    shot_texture_atlas.index += 1;
+                }
             }
-        } else if transform.translation.x > DESPAWN_SHOT_RANGE {
-            commands.entity(shot_entity).despawn();
+
+            if shot_sprite
+                .texture_atlas
+                .as_ref()
+                .map_or(true, |atlas| atlas.index >= 7)
+            {
+                enemy.life = enemy.life.saturating_sub(shot.damage);
+                if enemy.life == 0 {
+                    commands.entity(enemy_entity).despawn();
+
+                    let wave_factor = wave_control.wave_count as f32 + 1.0;
+                    let gold_reward =
+                        ((enemy.life as f32 / 2.5) + (wave_factor * 2.0)).round() as u16;
+
+                    gold.0 += gold_reward;
+                    info!("Enemy killed! Gained {} gold.", gold_reward);
+                }
+
+                commands.entity(shot_entity).despawn();
+            }
         }
     }
 }
