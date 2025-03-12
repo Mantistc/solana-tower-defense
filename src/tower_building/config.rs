@@ -47,17 +47,18 @@ pub const SCALAR: f32 = 0.5;
 pub const INITIAL_PLAYER_GOLD: u16 = 130;
 pub const MAX_LIFES: u8 = 30;
 
-pub const TOWER_POSITION_PLACEMENT: [Vec2; 14] = [
-    Vec2::new(17.0, 15.0),
-    Vec2::new(-110.0, 15.0),
-    Vec2::new(140.0, 15.0),
-    Vec2::new(-210.0, 270.0),
-    Vec2::new(-340.0, 270.0),
-    Vec2::new(-465.0, 270.0),
-    Vec2::new(-335.0, 65.0),
-    Vec2::new(-240.0, -230.0),
-    Vec2::new(17.0, -230.0),
-    Vec2::new(268.0, -230.0),
+pub const TOWER_POSITION_PLACEMENT: [Vec2; 15] = [
+    Vec2::new(17.0, 16.0),
+    Vec2::new(-112.0, 16.0),
+    Vec2::new(144.0, 16.0),
+    Vec2::new(-206.0, 270.0),
+    Vec2::new(-335.0, 270.0),
+    Vec2::new(-464.0, 270.0),
+    Vec2::new(-240.0, -240.0),
+    Vec2::new(-112.0, -240.0),
+    Vec2::new(17.0, -240.0),
+    Vec2::new(144.5, -240.0),
+    Vec2::new(272.5, -240.0),
     Vec2::new(400.0, 53.0),
     Vec2::new(560.0, 53.0),
     Vec2::new(400.0, 270.0),

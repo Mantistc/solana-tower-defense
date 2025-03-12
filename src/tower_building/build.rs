@@ -46,9 +46,9 @@ pub fn buy_tower(
                     if let Some(&zone_entity) = tower_control.zones.get(i) {
                         if let Ok((_, mut sprite)) = placement_zones.get_mut(zone_entity) {
                             sprite.color = if in_range && gold.0 >= tower_cost {
-                                Color::srgba(0.0, 1.0, 0.0, 0.5)
+                                Color::srgba(0.0, 1.0, 0.0, 0.25)
                             } else if in_range && gold.0 < tower_cost {
-                                Color::srgba(1.0, 0.0, 0.0, 0.5)
+                                Color::srgba(1.0, 0.0, 0.0, 0.25)
                             } else {
                                 Color::srgba(0.0, 0.0, 0.0, 0.0)
                             };
