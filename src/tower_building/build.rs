@@ -61,7 +61,7 @@ pub fn buy_tower(
                         && gold.0 >= tower_cost
                     {
                         let tower = Tower(selected_tower_type.to_tower_data(tower_level));
-
+                        info!("tower: {:?}",tower);
                         if gold.0 < tower_cost {
                             info!("insufficient gold: {:?}", gold.0);
                             return;
@@ -75,7 +75,7 @@ pub fn buy_tower(
                                 Sprite::from_image(texture.clone()),
                                 tower,
                                 Transform {
-                                    translation: Vec3::new(placement.x, placement.y, 1.0),
+                                    translation: Vec3::new(placement.x, placement.y - 16.0, 1.0),
                                     scale: Vec3::splat(2.0),
                                     ..default()
                                 },
@@ -136,6 +136,9 @@ pub fn upgrade_tower(
                                     gold.0, tower.attack_damage, tower.attack_speed
                                 );
                             }
+                        }
+                        if gold.0 < tower_cost {
+                            info!("gold: {:?}, cost: {:?}", gold.0, tower_cost);
                         }
                     }
                 }

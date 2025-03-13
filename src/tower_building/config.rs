@@ -37,14 +37,14 @@ impl Plugin for TowersPlugin {
     }
 }
 
-pub const COST_TABLE: [u16; 3] = [40, 80, 180];
-pub const INITIAL_TOWER_DAMAGE: [u16; 3] = [10, 25, 150];
+pub const COST_TABLE: [u16; 3] = [40, 100, 180];
+pub const INITIAL_TOWER_DAMAGE: [u16; 3] = [15, 40, 150];
 pub const TOWER_ATTACK_RANGE: f32 = 250.0;
 pub const DESPAWN_SHOT_RANGE: f32 = 800.0;
 pub const SHOT_HURT_DISTANCE: f32 = 700.0;
 pub const SHOT_SPEED: f32 = 700.0;
-pub const SCALAR: f32 = 0.5;
-pub const INITIAL_PLAYER_GOLD: u16 = 130;
+pub const SCALAR: f32 = 0.7;
+pub const INITIAL_PLAYER_GOLD: u16 = 95;
 pub const MAX_LIFES: u8 = 30;
 
 pub const TOWER_POSITION_PLACEMENT: [Vec2; 15] = [
