@@ -17,7 +17,7 @@ pub struct EnemyAnimation {
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum EnemyAnimationState {
     Walk,
-    Death,
+    _Death, // TODO: implement handle death animation
 }
 
 pub fn animate(
@@ -27,7 +27,7 @@ pub fn animate(
     for (mut _transform, mut enemy_sprite, mut enemy_animation) in &mut enemy_animation_query {
         let animation = match enemy_animation.state {
             EnemyAnimationState::Walk => &mut enemy_animation.walk,
-            EnemyAnimationState::Death => &mut enemy_animation.death,
+            EnemyAnimationState::_Death => &mut enemy_animation.death,
         };
         animation.timer.tick(time.delta());
 

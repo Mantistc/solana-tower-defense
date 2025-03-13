@@ -1,5 +1,8 @@
-//! Basics configs of the wave control, here we declare all the require stuff to manage
-//! each wave control. Sprites, constants, etc.
+//! Wave control determines how strong and fast enemies get with each wave.
+//! Every wave is tougher than the last, so we need to **manage** how these values scale over time.
+//!
+//! This file handles that, so if you want enemies to attack faster, deal more damage, or take more hits,
+//! this is where you make the changes.
 
 use bevy::prelude::*;
 
@@ -16,15 +19,26 @@ pub const INITIAL_ENEMY_LIFE: u16 = 60;
 pub const SCALAR: f32 = 0.3;
 pub const SCALE: f32 = 2.0;
 
-/// This Resource manage how fast each enemy will spawn, their textures, wave count, animations, etc.
-/// We can access globally to this resource to check/validate each wave data.
+/// Controls enemy waves, including spawn timing, textures, animations, and wave progression.
+/// This resource is globally accessible to check and validate wave data.
 #[derive(Resource, Debug)]
 pub struct WaveControl {
+    /// Current wave number.
     pub wave_count: u8,
+
+    /// Timer controlling the interval between enemy spawns within a wave.
     pub time_between_spawns: Timer,
+
+    /// List of enemy textures and their corresponding texture atlas layouts.
     pub textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)>,
+
+    /// Animations assigned to enemies.
     pub animations: Vec<EnemyAnimation>,
+
+    /// Number of enemies spawned in the current wave.
     pub spawned_count_in_wave: u8,
+
+    /// Timer controlling the interval between waves.
     pub time_between_waves: Timer,
 }
 
