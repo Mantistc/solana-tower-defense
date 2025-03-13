@@ -5,7 +5,7 @@ use crate::{
     tower_building::{DESPAWN_SHOT_RANGE, SHOT_HURT_DISTANCE, SHOT_SPEED},
 };
 
-use super::{Gold, Tower, TOWER_ATTACK_RANGE};
+use super::{Gold, Tower, TowerControl, TOWER_ATTACK_RANGE};
 
 #[derive(Component)]
 pub struct Shot {
@@ -33,8 +33,7 @@ pub fn spawn_shots_to_attack(
     mut towers: Query<(&Transform, &mut Tower)>,
     mut commands: Commands,
     time: Res<Time>,
-    asset_server: Res<AssetServer>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    tower_control: Res<TowerControl>,
 ) {
     for (tower_transform, mut tower) in &mut towers {
         let tower_position = tower_transform.translation;
@@ -90,16 +89,16 @@ pub fn spawn_shots_to_attack(
                     target: Some(*closest_enemy.unwrap()),
                     animation_timer: Timer::from_seconds(0.05, TimerMode::Repeating),
                 };
-                let texture = asset_server.load("towers/lich_01_shot.png");
-                let texture_atlas =
-                    TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 1, None, None);
-                let atlas_handle = texture_atlas_layouts.add(texture_atlas);
+                let (texture, atlas_handle) = tower_control
+                    .shot_textures
+                    .get(&tower.tower_type)
+                    .expect("A shot texture layout is expected to be loaded");
 
                 commands.spawn((
                     Sprite::from_atlas_image(
-                        texture,
+                        texture.clone(),
                         TextureAtlas {
-                            layout: atlas_handle,
+                            layout: atlas_handle.clone(),
                             index: 0,
                         },
                     ),

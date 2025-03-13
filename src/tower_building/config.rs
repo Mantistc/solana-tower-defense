@@ -4,7 +4,7 @@
 //! This file contains all the constants and resources needed for the attack and building systems.
 
 use super::*;
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{prelude::*, utils::hashbrown::HashMap};
 
 pub struct TowersPlugin;
 
@@ -88,6 +88,8 @@ pub struct TowerControl {
     pub placements: [u8; TOWER_POSITION_PLACEMENT.len()],
     /// Stores preloaded tower images for each level, so we can use them when spawning or upgrading towers
     pub textures: HashMap<(TowerType, u8), Handle<Image>>,
+    /// Tower shots images and texture atlas based on the tower type
+    pub shot_textures: HashMap<TowerType, (Handle<Image>, Handle<TextureAtlasLayout>)>,
     /// Holds entities representing valid tower placement zones, helping to check where towers can be built
     pub zones: Vec<Entity>,
 }
@@ -98,7 +100,7 @@ pub struct TowerControl {
 pub enum TowerType {
     Lich,
     Zigurat,
-    Electric,
+    Necro,
 }
 
 #[derive(Resource, Debug, Deref, DerefMut, Hash)]
@@ -111,7 +113,7 @@ impl TowerType {
         let base_cost = match self {
             TowerType::Lich => COST_TABLE[0],
             TowerType::Zigurat => COST_TABLE[1],
-            TowerType::Electric => COST_TABLE[2],
+            TowerType::Necro => COST_TABLE[2],
         };
         if level == 1 {
             return base_cost;
@@ -125,7 +127,7 @@ impl TowerType {
         let base_damage = match self {
             TowerType::Lich => INITIAL_TOWER_DAMAGE[0],
             TowerType::Zigurat => INITIAL_TOWER_DAMAGE[1],
-            TowerType::Electric => INITIAL_TOWER_DAMAGE[2],
+            TowerType::Necro => INITIAL_TOWER_DAMAGE[2],
         };
 
         // damage scales exponentially with level
@@ -136,7 +138,7 @@ impl TowerType {
         let base_attack_speed = match self {
             TowerType::Lich => 0.5,
             TowerType::Zigurat => 0.4,
-            TowerType::Electric => 1.2,
+            TowerType::Necro => 1.2,
         };
 
         // attack speed scales with level, but has a minimum cap to prevent extreme speeds
@@ -155,20 +157,38 @@ impl TowerType {
 }
 
 /// Loads tower sprites and stores them in a hashmap for quick access when spawning or upgrading towers
-pub fn load_towers_sprites(asset_server: Res<AssetServer>, mut commands: Commands) {
+pub fn load_towers_sprites(
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
     let mut textures = HashMap::new();
+    let mut shot_textures = HashMap::new();
 
     let tower_sprites = vec![
         ((TowerType::Lich, 1), "towers/lich_01_tower.png"),
         ((TowerType::Lich, 2), "towers/lich_02_tower.png"),
         ((TowerType::Lich, 3), "towers/lich_01_tower.png"),
         ((TowerType::Zigurat, 1), "towers/zigurat_01_tower.png"),
-        ((TowerType::Zigurat, 2), "towers/zigurat_02_tower.png"),
+        ((TowerType::Zigurat, 2), "towers/zigurat_01_tower.png"),
         ((TowerType::Zigurat, 3), "towers/zigurat_01_tower.png"),
-        ((TowerType::Electric, 1), "towers/electric_01_tower.png"),
-        ((TowerType::Electric, 2), "towers/electric_02_tower.png"),
-        ((TowerType::Electric, 3), "towers/electric_01_tower.png"),
+        ((TowerType::Necro, 1), "towers/necro_01_tower.png"),
+        ((TowerType::Necro, 2), "towers/necro_01_tower.png"),
+        ((TowerType::Necro, 3), "towers/necro_01_tower.png"),
     ];
+
+    let tower_shots = vec![
+        (TowerType::Lich, "towers/shot_lich_tower.png"),
+        (TowerType::Zigurat, "towers/shot_zigurat_tower.png"),
+        (TowerType::Necro, "towers/shot_necro_tower.png"),
+    ];
+
+    for (tower_type, shot_path) in tower_shots {
+        let texture = asset_server.load(shot_path);
+        let texture_atlas = TextureAtlasLayout::from_grid(UVec2::splat(32), 8, 1, None, None);
+        let atlas_handle = texture_atlas_layouts.add(texture_atlas);
+        shot_textures.insert(tower_type, (texture, atlas_handle));
+    }
 
     for (tower, path) in tower_sprites {
         let texture = asset_server.load(path);
@@ -179,5 +199,6 @@ pub fn load_towers_sprites(asset_server: Res<AssetServer>, mut commands: Command
         textures,
         placements: [0; TOWER_POSITION_PLACEMENT.len()],
         zones: [].to_vec(),
+        shot_textures,
     });
 }
