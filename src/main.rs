@@ -33,9 +33,9 @@ fn default_pluggins() -> PluginGroupBuilder {
         .set(ImagePlugin::default_nearest())
         .set(WindowPlugin {
             primary_window: Some(Window {
-                title: "Veralt".into(),
+                title: "Solana Tower Defense".into(),
                 resolution: (SCREEN_WIDTH, SCREEN_HEIGHT).into(),
-                // resizable: true,
+                resizable: true,
                 ..default()
             }),
             ..default()
