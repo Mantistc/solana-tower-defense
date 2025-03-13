@@ -16,7 +16,7 @@ pub struct Shot {
 }
 
 pub fn spawn_shots_to_attack(
-    enemies: Query<(&Transform, &BreakPointLvl, Entity), (Without<Tower>, With<Enemy>)>,
+    enemies: Query<(&Transform, &BreakPointLvl, Entity, &Enemy), (Without<Tower>, With<Enemy>)>,
     mut towers: Query<(&Transform, &mut Tower)>,
     mut commands: Commands,
     time: Res<Time>,
@@ -35,9 +35,9 @@ pub fn spawn_shots_to_attack(
         // then, take all of the higher breakpoint lvl
         // then take the closest to the breakpoint
 
-        let enemies_in_range: Vec<(&Transform, &BreakPointLvl, Entity)> = enemies
+        let enemies_in_range: Vec<(&Transform, &BreakPointLvl, Entity, &Enemy)> = enemies
             .iter()
-            .filter(|(t, _, _)| {
+            .filter(|(t, _, _, _)| {
                 let enemy_position = t.translation;
                 let distance = tower_position.distance(enemy_position);
                 distance < TOWER_ATTACK_RANGE && distance > 0.0
@@ -48,25 +48,26 @@ pub fn spawn_shots_to_attack(
         let max_break_value = enemies_in_range
             .iter()
             .cloned()
-            .map(|(_, b, _)| b)
+            .map(|(_, b, _, _)| b)
             .max()
             .unwrap_or(&BreakPointLvl(0));
 
         // get all the enemies with this max break lvl
-        let closer_enemies_to_victory: Vec<(&Transform, &BreakPointLvl, Entity)> = enemies_in_range
-            .iter()
-            .filter(|(_, b, _)| **b == *max_break_value)
-            .copied()
-            .collect();
+        let closer_enemies_to_victory: Vec<(&Transform, &BreakPointLvl, Entity, &Enemy)> =
+            enemies_in_range
+                .iter()
+                .filter(|(_, b, _, _)| **b == *max_break_value)
+                .copied()
+                .collect();
 
         // get the closest enemy to the break point lvl
         let mut closest_enemy = None;
-        for (enemy_transform, break_point_lvl, enemy_entity) in &closer_enemies_to_victory {
+        for (enemy_transform, break_point_lvl, enemy_entity, enemy) in &closer_enemies_to_victory {
             let index = break_point_lvl.0 as usize;
             let enemy_position = enemy_transform.translation;
             let distance_to_target = enemy_position.truncate().distance(BREAK_POINTS[index]);
 
-            if distance_to_target < closest_distance_to_target {
+            if distance_to_target < closest_distance_to_target && enemy.life > 0 {
                 closest_distance_to_target = distance_to_target;
                 target_enemy_position = Some(enemy_position);
                 closest_enemy = Some(enemy_entity)
@@ -97,7 +98,7 @@ pub fn spawn_shots_to_attack(
                     ),
                     shot,
                     Transform {
-                        translation: Vec3::new(tower_position.x, tower_position.y, 1.5),
+                        translation: Vec3::new(tower_position.x, tower_position.y + 40.0, 1.5),
                         ..default()
                     },
                 ));
@@ -115,9 +116,6 @@ pub fn shot_enemies(
     wave_control: Res<WaveControl>,
 ) {
     for (shot_entity, mut transform, mut shot, mut shot_sprite) in &mut shots {
-        shot.animation_timer.tick(time.delta());
-        let mut hit_enemy = None;
-        let mut closest_distance = f32::MAX;
         let next_position = shot.direction * SHOT_SPEED * time.delta_secs();
 
         if transform.translation.x > DESPAWN_SHOT_RANGE {
@@ -125,56 +123,50 @@ pub fn shot_enemies(
         }
 
         if let Some(target_entity) = shot.target {
-            if let Ok((_, enemy_transform, _)) = enemies.get(target_entity) {
+            if let Ok((enemy_entity, enemy_transform, mut enemy)) = enemies.get_mut(target_entity) {
                 let direction = (enemy_transform.translation - transform.translation).normalize();
                 transform.translation += direction * SHOT_SPEED * time.delta_secs();
+
+                let distance = transform
+                    .translation
+                    .distance_squared(enemy_transform.translation);
+
+                if distance <= SHOT_HURT_DISTANCE {
+                    shot.animation_timer.tick(time.delta());
+                    if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
+                        if shot.animation_timer.just_finished() {
+                            shot_texture_atlas.index += 1;
+                        }
+                    }
+
+                    if shot_sprite
+                        .texture_atlas
+                        .as_ref()
+                        .map_or(true, |atlas| atlas.index >= 7)
+                    {
+                        enemy.life = enemy.life.saturating_sub(shot.damage);
+                        if enemy.life == 0 {
+                            commands.entity(enemy_entity).despawn();
+
+                            let wave_factor = wave_control.wave_count as f32 + 1.0;
+                            let gold_reward =
+                                ((enemy.life as f32 / 2.5) + (wave_factor * 2.0)).round() as u16;
+
+                            gold.0 += gold_reward;
+                            info!("Enemy killed! Gained {} gold.", gold_reward);
+                        }
+
+                        commands.entity(shot_entity).despawn();
+                    }
+                } else {
+                    if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
+                        if shot.animation_timer.just_finished() {
+                            shot_texture_atlas.index = 0;
+                        }
+                    }
+                }
             } else {
                 transform.translation += next_position;
-            }
-        } else {
-            if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
-                if shot.animation_timer.just_finished() {
-                    shot_texture_atlas.index = 0;
-                }
-            }
-            transform.translation += next_position;
-        }
-
-        for (enemy_entity, enemy_transform, enemy) in &mut enemies {
-            let enemy_position = enemy_transform.translation;
-            let distance = transform.translation.distance_squared(enemy_position);
-
-            if distance <= SHOT_HURT_DISTANCE && distance < closest_distance {
-                hit_enemy = Some((enemy_entity, enemy));
-                closest_distance = distance;
-            }
-        }
-
-        if let Some((enemy_entity, mut enemy)) = hit_enemy {
-            if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
-                if shot.animation_timer.just_finished() {
-                    shot_texture_atlas.index += 1;
-                }
-            }
-
-            if shot_sprite
-                .texture_atlas
-                .as_ref()
-                .map_or(true, |atlas| atlas.index >= 7)
-            {
-                enemy.life = enemy.life.saturating_sub(shot.damage);
-                if enemy.life == 0 {
-                    commands.entity(enemy_entity).despawn();
-
-                    let wave_factor = wave_control.wave_count as f32 + 1.0;
-                    let gold_reward =
-                        ((enemy.life as f32 / 2.5) + (wave_factor * 2.0)).round() as u16;
-
-                    gold.0 += gold_reward;
-                    info!("Enemy killed! Gained {} gold.", gold_reward);
-                }
-
-                commands.entity(shot_entity).despawn();
             }
         }
     }

@@ -11,11 +11,11 @@
 
 use bevy::prelude::*;
 
-use crate::tower_building::{GameState, Lifes, SCALAR};
+use crate::tower_building::{GameState, Lifes};
 
 use super::{
     animate, control_first_wave, load_enemy_sprites, WaveControl, INITIAL_ENEMY_LIFE,
-    MAX_ENEMIES_PER_WAVE, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
+    MAX_ENEMIES_PER_WAVE, SCALAR, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
 
 // define plugin
