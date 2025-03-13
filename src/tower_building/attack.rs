@@ -15,8 +15,21 @@ pub struct Shot {
     pub animation_timer: Timer,
 }
 
+/// Spawns shots from towers targeting the most "dangerous" enemies.
+///
+/// # How it works:
+/// Each tower scans for enemies within its attack range, filtering them based on their **breakpoint level**,
+/// which represents how close they are to victory. The tower prioritizes enemies with the
+/// highest breakpoint level, and if multiple enemies share the highest breakpoint level, it selects
+/// the one closest to its designated **breakpoint position**.
+/// Once a target is selected and the attack timer completes, the tower spawns a shot aimed at the enemy.
+///
+/// # Shot Behavior:
+/// The shot is assigned a direction towards the targeted enemy and carries the tower's damage value. It includes
+/// an animation timer and uses a **texture atlas** to handle sprite animation.
+
 pub fn spawn_shots_to_attack(
-    enemies: Query<(&Transform, &BreakPointLvl, Entity, &Enemy), (Without<Tower>, With<Enemy>)>,
+    enemies: Query<(&Transform, &BreakPointLvl, Entity), (Without<Tower>, With<Enemy>)>,
     mut towers: Query<(&Transform, &mut Tower)>,
     mut commands: Commands,
     time: Res<Time>,
@@ -29,48 +42,42 @@ pub fn spawn_shots_to_attack(
 
         let mut target_enemy_position = None;
         let mut closest_distance_to_target = f32::MAX;
-
-        // the higher breakpoint lvl, the close is the enemy to the victory
-        // so, we need to filter all enemies that are in the attack range
-        // then, take all of the higher breakpoint lvl
-        // then take the closest to the breakpoint
-
-        let enemies_in_range: Vec<(&Transform, &BreakPointLvl, Entity, &Enemy)> = enemies
+        // find all enemies within the tower's attack range
+        let enemies_in_range: Vec<(&Transform, &BreakPointLvl, Entity)> = enemies
             .iter()
-            .filter(|(t, _, _, _)| {
+            .filter(|(t, _, _)| {
                 let enemy_position = t.translation;
                 let distance = tower_position.distance(enemy_position);
                 distance < TOWER_ATTACK_RANGE && distance > 0.0
             })
             .collect();
 
-        // get the max break lvl value
+        // identify the highest breakpoint level among the enemies in range
         let max_break_value = enemies_in_range
             .iter()
             .cloned()
-            .map(|(_, b, _, _)| b)
+            .map(|(_, b, _)| b)
             .max()
             .unwrap_or(&BreakPointLvl(0));
 
-        // get all the enemies with this max break lvl
-        let closer_enemies_to_victory: Vec<(&Transform, &BreakPointLvl, Entity, &Enemy)> =
-            enemies_in_range
-                .iter()
-                .filter(|(_, b, _, _)| **b == *max_break_value)
-                .copied()
-                .collect();
+        // select all enemies that share this highest breakpoint level
+        let closer_enemies_to_victory: Vec<(&Transform, &BreakPointLvl, Entity)> = enemies_in_range
+            .iter()
+            .filter(|(_, b, _)| **b == *max_break_value)
+            .copied()
+            .collect();
 
-        // get the closest enemy to the break point lvl
+        // determine the enemy closest to its designated breakpoint
         let mut closest_enemy = None;
-        for (enemy_transform, break_point_lvl, enemy_entity, enemy) in &closer_enemies_to_victory {
+        for (enemy_transform, break_point_lvl, enemy_entity) in &closer_enemies_to_victory {
             let index = break_point_lvl.0 as usize;
             let enemy_position = enemy_transform.translation;
             let distance_to_target = enemy_position.truncate().distance(BREAK_POINTS[index]);
 
-            if distance_to_target < closest_distance_to_target && enemy.life > 0 {
+            if distance_to_target < closest_distance_to_target {
                 closest_distance_to_target = distance_to_target;
                 target_enemy_position = Some(enemy_position);
-                closest_enemy = Some(enemy_entity)
+                closest_enemy = Some(enemy_entity);
             }
         }
         if let Some(enemy_position) = target_enemy_position {
@@ -107,7 +114,7 @@ pub fn spawn_shots_to_attack(
     }
 }
 
-pub fn shot_enemies(
+pub fn move_shots_to_enemies(
     mut enemies: Query<(Entity, &Transform, &mut Enemy), Without<Shot>>,
     mut shots: Query<(Entity, &mut Transform, &mut Shot, &mut Sprite)>,
     mut commands: Commands,

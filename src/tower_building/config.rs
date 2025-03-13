@@ -1,9 +1,7 @@
-//! This module handles all configurations related to tower building logic, including:
-//! 1️) **Constants** – Defining core values for towers.
-//! 2️) **Resources** – Managing shared game data for towers.
-//! 3️) **Sprite Loading Logic** – Handling assets for tower visuals.
+//! To build a **tower**, we first need to define its cost, damage per second (DPS), and other stats.
+//! Each tower also has a **position** on the tilemap, meaning you can only place one tower per tile (obviously).
 //!
-//! This file is responsible for defining all startup processes related to tower building and attacking.
+//! This file contains all the constants and resources needed for the attack and building systems.
 
 use super::*;
 use bevy::{prelude::*, utils::HashMap};
@@ -33,7 +31,7 @@ impl Plugin for TowersPlugin {
                 reset_hover_color_in_attacking.run_if(in_state(GameState::Attacking)),
             )
             // attack systems
-            .add_systems(Update, (spawn_shots_to_attack, shot_enemies));
+            .add_systems(Update, (spawn_shots_to_attack, move_shots_to_enemies));
     }
 }
 
@@ -83,17 +81,19 @@ pub struct Gold(pub u16);
 #[derive(Resource, Debug)]
 pub struct Lifes(pub u8);
 
+/// Manages tower placement, textures, and valid build zones.
 #[derive(Resource, Debug)]
 pub struct TowerControl {
-    /// Control if in a specific position there is already a `tower` placed.
+    /// Keeps track of which spots already have a tower placed
     pub placements: [u8; TOWER_POSITION_PLACEMENT.len()],
-    /// Each tower has an image based on the tower lvl, so, we just stored at the startup, then we use it when
-    /// spawn/upgrade a tower.
+    /// Stores preloaded tower images for each level, so we can use them when spawning or upgrading towers
     pub textures: HashMap<(TowerType, u8), Handle<Image>>,
-    /// This `zones` entities help to determine/verify the places where is available to place a tower.
+    /// Holds entities representing valid tower placement zones, helping to check where towers can be built
     pub zones: Vec<Entity>,
 }
 
+/// Represents the different tower types available in the game.
+/// Each tower type has three upgrade levels.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TowerType {
     Lich,
@@ -105,6 +105,8 @@ pub enum TowerType {
 pub struct SelectedTowerType(pub TowerType);
 
 impl TowerType {
+    /// Returns the cost of a tower based on its type and level
+    /// The base cost is defined per tower type, and the price increases exponentially with level
     pub fn to_cost(&self, level: u8) -> u16 {
         let base_cost = match self {
             TowerType::Lich => COST_TABLE[0],
@@ -117,6 +119,8 @@ impl TowerType {
         (base_cost as f32 * 1.3f32.powf(level as f32)).round() as u16
     }
 
+    /// Generates the stats for a tower based on its type and level
+    /// Includes attack damage and attack speed, both of which scale with level
     pub fn to_tower_data(&self, level: u8) -> TowerInfo {
         let base_damage = match self {
             TowerType::Lich => INITIAL_TOWER_DAMAGE[0],
@@ -124,6 +128,7 @@ impl TowerType {
             TowerType::Electric => INITIAL_TOWER_DAMAGE[2],
         };
 
+        // damage scales exponentially with level
         let attack_damage = ((base_damage as f32) * (1.1 + SCALAR).powf(level as f32))
             .round()
             .clamp(1.0, 500.0) as u16;
@@ -134,6 +139,7 @@ impl TowerType {
             TowerType::Electric => 1.2,
         };
 
+        // attack speed scales with level, but has a minimum cap to prevent extreme speeds
         let attack_speed = Timer::from_seconds(
             (base_attack_speed * 0.85f32.powf(level as f32)).max(0.1),
             TimerMode::Repeating,
@@ -148,6 +154,7 @@ impl TowerType {
     }
 }
 
+/// Loads tower sprites and stores them in a hashmap for quick access when spawning or upgrading towers
 pub fn load_towers_sprites(asset_server: Res<AssetServer>, mut commands: Commands) {
     let mut textures = HashMap::new();
 

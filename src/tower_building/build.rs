@@ -16,6 +16,9 @@ pub struct TowerInfo {
 #[derive(Component, Debug, Deref, DerefMut)]
 pub struct Tower(pub TowerInfo);
 
+/// Handles the process of buying and placing a tower on the map.
+/// It checks the player's gold, highlights valid placement zones,
+/// and spawns the selected tower if conditions are met.
 pub fn buy_tower(
     windows: Query<&Window>,
     buttons: Res<ButtonInput<MouseButton>>,
@@ -33,7 +36,8 @@ pub fn buy_tower(
         if let Ok((camera, camera_transform)) = camera_query.get_single() {
             if let Ok(world_position) = camera.viewport_to_world(camera_transform, cursor_position)
             {
-                let cursor_world_pos = world_position.origin.truncate(); // Vec2
+                let cursor_world_pos = world_position.origin.truncate();
+
                 for (i, placement) in TOWER_POSITION_PLACEMENT.iter().enumerate() {
                     let in_range = cursor_world_pos.x >= placement.x - range
                         && cursor_world_pos.x <= placement.x + range
@@ -46,11 +50,11 @@ pub fn buy_tower(
                     if let Some(&zone_entity) = tower_control.zones.get(i) {
                         if let Ok((_, mut sprite)) = placement_zones.get_mut(zone_entity) {
                             sprite.color = if in_range && gold.0 >= tower_cost {
-                                Color::srgba(0.0, 1.0, 0.0, 0.25)
+                                Color::srgba(0.0, 1.0, 0.0, 0.25) // green when affordable
                             } else if in_range && gold.0 < tower_cost {
-                                Color::srgba(1.0, 0.0, 0.0, 0.25)
+                                Color::srgba(1.0, 0.0, 0.0, 0.25) // red when not enough gold
                             } else {
-                                Color::srgba(0.0, 0.0, 0.0, 0.0)
+                                Color::srgba(0.0, 0.0, 0.0, 0.0) // transparent when out of range
                             };
                         }
                     }
@@ -61,7 +65,8 @@ pub fn buy_tower(
                         && gold.0 >= tower_cost
                     {
                         let tower = Tower(selected_tower_type.to_tower_data(tower_level));
-                        info!("tower: {:?}",tower);
+                        info!("tower: {:?}", tower);
+
                         if gold.0 < tower_cost {
                             info!("insufficient gold: {:?}", gold.0);
                             return;

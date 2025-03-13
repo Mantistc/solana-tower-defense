@@ -18,7 +18,6 @@ use super::{
     MAX_ENEMIES_PER_WAVE, SCALAR, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
 
-// define plugin
 pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
@@ -35,13 +34,11 @@ impl Plugin for EnemiesPlugin {
             )
             .add_systems(
                 Update,
-                (spawn, animate, move_enemies, despawn_enemies)
+                (spawn_wave, animate, move_enemies, despawn_enemies)
                     .run_if(in_state(GameState::Attacking)),
             );
     }
 }
-
-// define components
 
 #[derive(Component)]
 pub struct Enemy {
@@ -52,8 +49,7 @@ pub struct Enemy {
 #[derive(Debug, Component, Deref, DerefMut, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BreakPointLvl(pub u8);
 
-// define systems
-fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveControl>) {
+fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveControl>) {
     if wave_control.wave_count == wave_control.textures.len() as u8 {
         return;
     }
@@ -94,6 +90,8 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveC
     }
 }
 
+/// Defines a set of predefined points in the game world where enemies change direction.
+/// These points dictate the movement path of the enemies.
 pub const BREAK_POINTS: [Vec2; 6] = [
     Vec2::new(250.0, SPAWN_Y_LOCATION),
     Vec2::new(250.0, -125.0),
@@ -103,6 +101,9 @@ pub const BREAK_POINTS: [Vec2; 6] = [
     Vec2::new(-455.0, -295.0),
 ];
 
+/// Moves enemies along a predefined path based on their current position and speed.
+/// The movement is determined by comparing the enemy’s position to predefined breakpoints.
+/// Once an enemy reaches a specific breakpoint, it updates its direction accordingly.
 pub fn move_enemies(
     mut enemies: Query<(&mut Transform, &Enemy, &mut BreakPointLvl)>,
     time: Res<Time>,
@@ -148,7 +149,6 @@ pub fn move_enemies(
         }
     }
 }
-
 pub fn despawn_enemies(
     mut commands: Commands,
     mut enemies: Query<(&Transform, Entity), With<Enemy>>,
