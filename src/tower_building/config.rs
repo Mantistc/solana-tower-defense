@@ -31,14 +31,21 @@ impl Plugin for TowersPlugin {
                 reset_hover_color_in_attacking.run_if(in_state(GameState::Attacking)),
             )
             // attack systems
-            .add_systems(Update, (spawn_shots_to_attack, move_shots_to_enemies));
+            .add_systems(
+                Update,
+                (
+                    check_if_target_enemy_exist,
+                    spawn_shots_to_attack,
+                    move_shots_to_enemies,
+                ),
+            );
     }
 }
 
 pub const COST_TABLE: [u16; 3] = [40, 100, 180];
 pub const INITIAL_TOWER_DAMAGE: [u16; 3] = [15, 40, 150];
 pub const TOWER_ATTACK_RANGE: f32 = 250.0;
-pub const DESPAWN_SHOT_RANGE: f32 = 800.0;
+pub const DESPAWN_SHOT_RANGE: f32 = 1500.0;
 pub const SHOT_HURT_DISTANCE: f32 = 700.0;
 pub const SHOT_SPEED: f32 = 700.0;
 pub const SCALAR: f32 = 0.7;
@@ -167,7 +174,7 @@ pub fn load_towers_sprites(
 
     let tower_sprites = vec![
         ((TowerType::Lich, 1), "towers/lich_01_tower.png"),
-        ((TowerType::Lich, 2), "towers/lich_02_tower.png"),
+        ((TowerType::Lich, 2), "towers/lich_01_tower.png"),
         ((TowerType::Lich, 3), "towers/lich_01_tower.png"),
         ((TowerType::Zigurat, 1), "towers/zigurat_01_tower.png"),
         ((TowerType::Zigurat, 2), "towers/zigurat_01_tower.png"),
