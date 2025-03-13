@@ -124,10 +124,6 @@ pub fn move_shots_to_enemies(
     for (shot_entity, mut transform, mut shot, mut shot_sprite) in &mut shots {
         let next_position = shot.direction * SHOT_SPEED * time.delta_secs();
 
-        if transform.translation.x > DESPAWN_SHOT_RANGE {
-            commands.entity(shot_entity).despawn();
-        }
-
         if let Some(target_entity) = shot.target {
             if let Ok((enemy_entity, enemy_transform, mut enemy)) = enemies.get_mut(target_entity) {
                 let direction = (enemy_transform.translation - transform.translation).normalize();
@@ -164,15 +160,35 @@ pub fn move_shots_to_enemies(
 
                         commands.entity(shot_entity).despawn();
                     }
-                } else {
-                    if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
-                        if shot.animation_timer.just_finished() {
-                            shot_texture_atlas.index = 0;
-                        }
-                    }
                 }
-            } else {
-                transform.translation += next_position;
+            }
+        } else {
+            transform.translation += next_position;
+        }
+    }
+}
+
+pub fn check_if_target_enemy_exist(
+    mut shots: Query<(&mut Shot, &mut Sprite, &Transform, Entity)>,
+    enemies: Query<Entity, With<Enemy>>,
+    mut commands: Commands,
+) {
+    for (mut shot, mut shot_sprite, transform, shot_entity) in &mut shots {
+        if let Some(target) = shot.target {
+            if !enemies.get(target).is_ok() {
+                shot.target = None
+            }
+        } else {
+            if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
+                shot_texture_atlas.index = 0;
+            }
+            if transform
+                .translation
+                .truncate()
+                .distance(Vec2::new(0.0, 0.0))
+                > DESPAWN_SHOT_RANGE
+            {
+                commands.entity(shot_entity).despawn();
             }
         }
     }
