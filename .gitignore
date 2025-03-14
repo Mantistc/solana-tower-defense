@@ -45,3 +45,5 @@ wasm_out/
 *.js
 *.html
 _assets
+
+keypair

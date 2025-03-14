@@ -1,5 +1,5 @@
 pub mod config;
-pub mod wallet;
+pub mod ecs;
 
 pub use config::*;
-pub use wallet::*;
+pub use ecs::*;
