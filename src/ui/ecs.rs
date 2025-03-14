@@ -26,6 +26,9 @@ impl Plugin for UiPlugin {
 }
 
 fn spawn_game_ui(mut commands: Commands) {
+    // think of this root_ui like a div in html that wraps all the other divs xd
+    // it defines where the ui will be positioned, and from there, you spawn
+    // the rest of the components as children. pretty much like how you'd do it in html
     let root_ui = commands
         .spawn((
             Node {

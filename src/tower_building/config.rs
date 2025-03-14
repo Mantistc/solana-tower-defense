@@ -74,6 +74,7 @@ pub const TOWER_POSITION_PLACEMENT: [Vec2; 15] = [
 pub enum GameState {
     Building,
     Attacking,
+    GameOver,
 }
 
 impl Default for GameState {

@@ -112,11 +112,11 @@ pub fn move_enemies(
         let translation = enemy_transform.translation;
         let speed = enemy.speed * time.delta_secs();
 
-        // 1. if x > BREAK_POINTS[0], move -x
+        // 1. -x
         if translation.x > BREAK_POINTS[0].x {
             enemy_transform.translation.x -= speed;
         }
-        // 2. if x <= BREAK_POINTS[0], move en -y
+        // 2. -y
         else if translation.x <= BREAK_POINTS[0].x
             && translation.x > BREAK_POINTS[2].x
             && translation.y > BREAK_POINTS[1].y
@@ -124,12 +124,12 @@ pub fn move_enemies(
             enemy_transform.translation.y -= speed;
             *breal_point_lvl = BreakPointLvl(1);
         }
-        // 3. if y <= BREAK_POINTS[1] && x >= BREAK_POINTS[2], move -x
+        // 3. -x
         else if translation.y <= BREAK_POINTS[1].y && translation.x >= BREAK_POINTS[2].x {
             enemy_transform.translation.x -= speed;
             *breal_point_lvl = BreakPointLvl(2);
         }
-        // 4. if y < SPAWN_Y_LOCATION && x <= BREAK_POINTS[2], move +y
+        // 4. +y
         else if translation.y < SPAWN_Y_LOCATION
             && translation.x <= BREAK_POINTS[2].x
             && translation.x > BREAK_POINTS[4].x
@@ -137,25 +137,30 @@ pub fn move_enemies(
             enemy_transform.translation.y += speed;
             *breal_point_lvl = BreakPointLvl(3);
         }
-        // 5. if y >= SPAWN_Y_LOCATION && x >= BREAK_POINTS[3], move -x
+        // 5. -x
         else if translation.y >= SPAWN_Y_LOCATION && translation.x >= BREAK_POINTS[4].x {
             enemy_transform.translation.x -= speed;
             *breal_point_lvl = BreakPointLvl(4);
         }
-        // 6. if y > BREAK_POINTS[4] && x <= BREAK_POINTS[3], move -y
+        // 6. -y
         else if translation.y > BREAK_POINTS[5].y && translation.x <= BREAK_POINTS[4].x {
             enemy_transform.translation.y -= speed;
             *breal_point_lvl = BreakPointLvl(5);
         }
     }
 }
+
 pub fn despawn_enemies(
     mut commands: Commands,
     mut enemies: Query<(&Transform, Entity), With<Enemy>>,
     mut lifes: ResMut<Lifes>,
+    mut game_state: ResMut<NextState<GameState>>,
 ) {
     for (enemy_transform, entity) in &mut enemies {
         let translation = enemy_transform.translation;
+        if lifes.0 == 0 {
+            game_state.set(GameState::GameOver);
+        }
         if translation.y <= BREAK_POINTS[5].y {
             commands.entity(entity).despawn();
             lifes.0 = lifes.0.saturating_sub(1);
