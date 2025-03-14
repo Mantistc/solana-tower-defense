@@ -23,3 +23,4 @@ impl Plugin for SolanaPlugin {
 }
 
 pub const WALLET_PATH: &str = "keypair/wallet.json";
+pub const MESSAGE: &str = "Sign this message to start the game, anon.";

@@ -1,10 +1,10 @@
-use bevy::{color::palettes::css::WHITE, prelude::*};
-use solana_sdk::native_token::LAMPORTS_PER_SOL;
+use bevy::{color::palettes::css::*, prelude::*};
+use solana_sdk::{native_token::LAMPORTS_PER_SOL, signer::Signer};
 
 use crate::{
     enemies::WaveControl,
-    solana::{WalletBalance, WALLET},
-    tower_building::{Gold, Lifes},
+    solana::{PlayerSigner, WalletBalance, MESSAGE},
+    tower_building::{GameState, Gold, Lifes},
 };
 
 pub struct UiPlugin;
@@ -19,12 +19,21 @@ pub enum TextType {
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_game_ui)
+        app.add_systems(Startup, spawn_sign_message_to_start)
+            .add_systems(
+                Startup,
+                spawn_game_ui.run_if(|game_state: Res<State<GameState>>| {
+                    matches!(
+                        game_state.get(),
+                        GameState::Building | GameState::Attacking | GameState::GameOver
+                    )
+                }),
+            )
             .add_systems(Update, update_ui_texts);
     }
 }
 
-fn spawn_game_ui(mut commands: Commands) {
+pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
     // think of this root_ui like a div in html that wraps all the other divs xd
     // it defines where the ui will be positioned, and from there, you spawn
     // the rest of the components as children. Pretty much like how you'd do it in html
@@ -39,9 +48,12 @@ fn spawn_game_ui(mut commands: Commands) {
                 padding: UiRect::all(Val::Px(10.0)),
                 position_type: PositionType::Absolute,
                 left: Val::Percent(44.0),
+                border: UiRect::all(Val::Px(5.0)),
                 top: Val::Percent(5.0),
                 ..default()
             },
+            BorderColor(BLACK.into()),
+            BorderRadius::MAX,
             Transform::from_translation(Vec3::new(-100.0, 0.0, 0.0)),
             Name::new("UI Root"),
             BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.85)),
@@ -102,7 +114,7 @@ fn spawn_game_ui(mut commands: Commands) {
 
     add_top_padding(&mut commands, root_ui, 10.0);
 
-    let wallet_str = WALLET.to_string();
+    let wallet_str = wallet.0.pubkey().to_string();
     let shortened_wallet = format!(
         "{}...{}",
         &wallet_str[0..6],
@@ -157,4 +169,102 @@ pub fn update_ui_texts(
             }
         }
     }
+}
+
+pub fn spawn_sign_message_to_start(mut commands: Commands, player_signer: Res<PlayerSigner>) {
+    let root_ui = commands
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(10.0)),
+                ..default()
+            },
+            Name::new("start"),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.85)),
+        ))
+        .id();
+
+    let add_top_padding = |commands: &mut Commands, parent: Entity, px: f32| {
+        commands.entity(parent).with_children(|p| {
+            p.spawn(Node {
+                height: Val::Px(px),
+                ..default()
+            });
+        });
+    };
+
+    let _sign_message_header = commands.entity(root_ui).with_children(|parent| {
+        parent.spawn((
+            Text::new("Start"),
+            TextFont {
+                font_size: 35.0,
+                ..default()
+            },
+            TextLayout::new_with_justify(JustifyText::Center),
+            TextColor(WHITE.into()),
+        ));
+    });
+
+    add_top_padding(&mut commands, root_ui, 25.0);
+
+    let _message = commands.entity(root_ui).with_children(|parent| {
+        parent.spawn((
+            Text::new(MESSAGE),
+            TextFont {
+                font_size: 15.0,
+                ..default()
+            },
+            TextLayout::new_with_justify(JustifyText::Center),
+            TextColor(WHITE.into()),
+        ));
+    });
+
+    add_top_padding(&mut commands, root_ui, 25.0);
+
+    let _signer_address = commands.entity(root_ui).with_children(|parent| {
+        parent.spawn((
+            Text::new(format!(
+                "Signer address: {}",
+                player_signer.pubkey().to_string()
+            )),
+            TextFont {
+                font_size: 15.0,
+                ..default()
+            },
+            TextLayout::new_with_justify(JustifyText::Center),
+            TextColor(WHITE.into()),
+        ));
+    });
+
+    add_top_padding(&mut commands, root_ui, 25.0);
+
+    let _button = commands.entity(root_ui).with_children(|parent| {
+        parent
+            .spawn((
+                Button,
+                Node {
+                    width: Val::Px(150.0),
+                    height: Val::Px(65.0),
+                    border: UiRect::all(Val::Px(5.0)),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                BorderColor(BLACK.into()),
+                BorderRadius::MAX,
+                BackgroundColor(Color::Srgba(Srgba::new(1.0, 1.0, 1.0, 0.5))),
+            ))
+            .with_child((
+                Text::new("Sign"),
+                TextFont {
+                    font_size: 23.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.0, 0.0, 0.0)),
+            ));
+    });
 }
