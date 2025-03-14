@@ -75,11 +75,12 @@ pub enum GameState {
     Building,
     Attacking,
     GameOver,
+    Start,
 }
 
 impl Default for GameState {
     fn default() -> Self {
-        GameState::Building
+        GameState::Start
     }
 }
 
