@@ -3,6 +3,7 @@ use bevy_ecs_tiled::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use enemies::EnemiesPlugin;
+use solana::SolanaPlugin;
 use tilemap::{
     configs::{SCREEN_HEIGHT, SCREEN_WIDTH},
     TowerDefenseTilemapPlugin,
@@ -10,6 +11,7 @@ use tilemap::{
 use tower_building::TowersPlugin;
 use ui::UiPlugin;
 mod enemies;
+mod solana;
 mod tilemap;
 mod tower_building;
 mod ui;
@@ -20,6 +22,7 @@ fn main() {
         .add_plugins(TilemapPlugin)
         .add_plugins(TiledMapPlugin::default())
         .add_plugins(TowerDefenseTilemapPlugin)
+        .add_plugins(SolanaPlugin)
         .add_plugins(UiPlugin)
         .add_plugins(EnemiesPlugin)
         .add_plugins(TowersPlugin)
