@@ -8,9 +8,11 @@ use tilemap::{
     TowerDefenseTilemapPlugin,
 };
 use tower_building::TowersPlugin;
+use ui::UiPlugin;
 mod enemies;
 mod tilemap;
 mod tower_building;
+mod ui;
 
 fn main() {
     App::new()
@@ -18,6 +20,7 @@ fn main() {
         .add_plugins(TilemapPlugin)
         .add_plugins(TiledMapPlugin::default())
         .add_plugins(TowerDefenseTilemapPlugin)
+        .add_plugins(UiPlugin)
         .add_plugins(EnemiesPlugin)
         .add_plugins(TowersPlugin)
         // world inspector plugin to check/change and test stuff in runtime
@@ -27,7 +30,6 @@ fn main() {
         .run();
 }
 
-// default stuff
 fn default_pluggins() -> PluginGroupBuilder {
     DefaultPlugins
         .set(ImagePlugin::default_nearest())

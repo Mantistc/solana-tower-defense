@@ -85,7 +85,7 @@ impl Default for GameState {
 #[derive(Resource, Debug, Deref, DerefMut)]
 pub struct Gold(pub u16);
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Debug, Deref, DerefMut)]
 pub struct Lifes(pub u8);
 
 /// Manages tower placement, textures, and valid build zones.
