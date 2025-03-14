@@ -16,7 +16,10 @@ pub struct SolanaPlugin;
 impl Plugin for SolanaPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SolClient(setup_solana_client()))
+            .insert_resource(PlayerSigner(load_keypair_from_file()))
             .insert_resource(WalletBalance(0))
-            .add_systems(Startup, update_wallet_balance);
+            .add_systems(Startup, (get_wallet_balance, sign_message));
     }
 }
+
+pub const WALLET_PATH: &str = "keypair/wallet.json";

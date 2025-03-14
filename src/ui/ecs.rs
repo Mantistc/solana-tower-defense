@@ -44,7 +44,7 @@ fn spawn_game_ui(mut commands: Commands) {
             },
             Transform::from_translation(Vec3::new(-100.0, 0.0, 0.0)),
             Name::new("UI Root"),
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 1.0)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.85)),
         ))
         .id();
 
@@ -102,9 +102,16 @@ fn spawn_game_ui(mut commands: Commands) {
 
     add_top_padding(&mut commands, root_ui, 10.0);
 
+    let wallet_str = WALLET.to_string();
+    let shortened_wallet = format!(
+        "{}...{}",
+        &wallet_str[0..6],
+        &wallet_str[wallet_str.len() - 6..]
+    );
+
     let _wallet_address = commands.entity(root_ui).with_children(|parent| {
         parent.spawn((
-            Text::new(format!("Wallet Address: {:?}", WALLET.to_string())),
+            Text::new(format!("Wallet Address: {}", shortened_wallet)),
             TextFont {
                 font_size: 15.0,
                 ..default()
