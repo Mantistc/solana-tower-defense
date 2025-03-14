@@ -1,34 +1,33 @@
 use bevy::{color::palettes::css::WHITE, prelude::*};
+use solana_sdk::native_token::LAMPORTS_PER_SOL;
 
 use crate::{
     enemies::WaveControl,
+    solana::{WalletBalance, WALLET},
     tower_building::{Gold, Lifes},
 };
 
 pub struct UiPlugin;
 
 #[derive(Component)]
-pub struct GoldText;
-
-#[derive(Component)]
-pub struct WaveCountText;
-
-#[derive(Component)]
-pub struct LifesText;
+pub enum TextType {
+    GoldText,
+    WaveCountText,
+    LifesText,
+    WalletBalanceText,
+}
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_game_ui).add_systems(
-            Update,
-            (update_gold_text, update_lifes_text, update_wave_count_text),
-        );
+        app.add_systems(Startup, spawn_game_ui)
+            .add_systems(Update, update_ui_texts);
     }
 }
 
 fn spawn_game_ui(mut commands: Commands) {
     // think of this root_ui like a div in html that wraps all the other divs xd
     // it defines where the ui will be positioned, and from there, you spawn
-    // the rest of the components as children. pretty much like how you'd do it in html
+    // the rest of the components as children. Pretty much like how you'd do it in html
     let root_ui = commands
         .spawn((
             Node {
@@ -67,7 +66,7 @@ fn spawn_game_ui(mut commands: Commands) {
             },
             TextLayout::new_with_justify(JustifyText::Center),
             TextColor(WHITE.into()),
-            GoldText,
+            TextType::GoldText,
         ));
     });
 
@@ -82,7 +81,7 @@ fn spawn_game_ui(mut commands: Commands) {
             },
             TextLayout::new_with_justify(JustifyText::Right),
             TextColor(WHITE.into()),
-            WaveCountText,
+            TextType::WaveCountText,
         ));
     });
 
@@ -97,28 +96,58 @@ fn spawn_game_ui(mut commands: Commands) {
             },
             TextLayout::new_with_justify(JustifyText::Right),
             TextColor(WHITE.into()),
-            LifesText,
+            TextType::LifesText,
+        ));
+    });
+
+    add_top_padding(&mut commands, root_ui, 10.0);
+
+    let _wallet_address = commands.entity(root_ui).with_children(|parent| {
+        parent.spawn((
+            Text::new(format!("Wallet Address: {:?}", WALLET.to_string())),
+            TextFont {
+                font_size: 15.0,
+                ..default()
+            },
+            TextLayout::new_with_justify(JustifyText::Right),
+            TextColor(WHITE.into()),
+        ));
+    });
+
+    add_top_padding(&mut commands, root_ui, 10.0);
+
+    let _sol_balance = commands.entity(root_ui).with_children(|parent| {
+        parent.spawn((
+            Text::new("Sol Balance: 0.0"),
+            TextFont {
+                font_size: 15.0,
+                ..default()
+            },
+            TextLayout::new_with_justify(JustifyText::Right),
+            TextColor(WHITE.into()),
+            TextType::WalletBalanceText,
         ));
     });
 }
 
-pub fn update_gold_text(mut text: Query<&mut Text, With<GoldText>>, gold: Res<Gold>) {
-    if let Ok(gold_text) = &mut text.get_single_mut() {
-        gold_text.0 = format!("Gold: {:?}", gold.0);
-    }
-}
-
-pub fn update_lifes_text(mut text: Query<&mut Text, With<LifesText>>, lifes: Res<Lifes>) {
-    if let Ok(lifes_text) = &mut text.get_single_mut() {
-        lifes_text.0 = format!("Lifes: {:?}", lifes.0);
-    }
-}
-
-pub fn update_wave_count_text(
-    mut text: Query<&mut Text, With<WaveCountText>>,
-    wave_count: Res<WaveControl>,
+pub fn update_ui_texts(
+    mut texts: Query<(&mut Text, &TextType)>,
+    resources: (Res<Gold>, Res<Lifes>, Res<WalletBalance>, Res<WaveControl>),
 ) {
-    if let Ok(wave_count_text) = &mut text.get_single_mut() {
-        wave_count_text.0 = format!("Wave count: {}", wave_count.wave_count + 1);
+    let (gold, lifes, wallet_balance, wave_control) = resources;
+    for (mut text, text_type) in &mut texts {
+        match text_type {
+            TextType::GoldText => text.0 = format!("Gold: {:?}", gold.0),
+            TextType::WaveCountText => {
+                text.0 = format!("Wave count: {}", wave_control.wave_count + 1)
+            }
+            TextType::LifesText => text.0 = format!("Lifes: {:?}", lifes.0),
+            TextType::WalletBalanceText => {
+                text.0 = format!(
+                    "Sol Balance: {:.2}",
+                    wallet_balance.0 as f32 / LAMPORTS_PER_SOL as f32
+                )
+            }
+        }
     }
 }
