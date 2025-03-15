@@ -20,22 +20,14 @@ pub enum TextType {
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_sign_message_to_start)
-            .add_systems(
-                Startup,
-                spawn_game_ui.run_if(|game_state: Res<State<GameState>>| {
-                    matches!(
-                        game_state.get(),
-                        GameState::Building | GameState::Attacking | GameState::GameOver
-                    )
-                }),
-            )
+            .add_systems(OnExit(GameState::Start), spawn_game_ui)
             .add_systems(Update, (sign_when_press_btn, update_ui_texts));
     }
 }
 
 // This part is the stats/values the player have after start the game
 
-pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
+pub fn spawn_game_ui(mut commands: Commands) {
     // think of this root_ui like a div in html that wraps all the other divs xd
     // it defines where the ui will be positioned, and from there, you spawn
     // the rest of the components as children. Pretty much like how you'd do it in html
@@ -54,11 +46,11 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
                 top: Val::Percent(5.0),
                 ..default()
             },
-            BorderColor(BLACK.into()),
-            BorderRadius::MAX,
+            BorderColor(WHITE.into()),
+            BorderRadius::all(Val::Px(15.0)),
             Transform::from_translation(Vec3::new(-100.0, 0.0, 0.0)),
             Name::new("UI Root"),
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.85)),
+            BackgroundColor(Color::srgb(24.0 / 255.0, 129.0 / 255.0, 161.0 / 255.0)),
         ))
         .id();
 
@@ -111,27 +103,6 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
             TextLayout::new_with_justify(JustifyText::Right),
             TextColor(WHITE.into()),
             TextType::LifesText,
-        ));
-    });
-
-    add_top_padding(&mut commands, root_ui, 10.0);
-
-    let wallet_str = wallet.0.pubkey().to_string();
-    let shortened_wallet = format!(
-        "{}...{}",
-        &wallet_str[0..6],
-        &wallet_str[wallet_str.len() - 6..]
-    );
-
-    let _wallet_address = commands.entity(root_ui).with_children(|parent| {
-        parent.spawn((
-            Text::new(format!("Wallet Address: {}", shortened_wallet)),
-            TextFont {
-                font_size: 15.0,
-                ..default()
-            },
-            TextLayout::new_with_justify(JustifyText::Right),
-            TextColor(WHITE.into()),
         ));
     });
 
@@ -295,9 +266,6 @@ pub fn sign_when_press_btn(
 
         match *interaction {
             Interaction::Pressed => {
-                *color = BLACK.into();
-                border_color.0 = WHITE.into();
-                text_color.0 = WHITE.into();
                 sign_message(&player_signer);
                 game_state.set(GameState::Building);
                 if let Some((start_ui_entity, _)) = entities
@@ -307,7 +275,16 @@ pub fn sign_when_press_btn(
                     commands.entity(start_ui_entity).despawn_recursive();
                 }
             }
-            Interaction::Hovered | Interaction::None => {}
+            Interaction::Hovered => {
+                *color = BLACK.into();
+                border_color.0 = WHITE.into();
+                text_color.0 = WHITE.into();
+            }
+            Interaction::None => {
+                *color = WHITE.into();
+                border_color.0 = BLACK.into();
+                text_color.0 = BLACK.into();
+            }
         }
     }
 }
