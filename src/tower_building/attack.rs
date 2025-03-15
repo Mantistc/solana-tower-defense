@@ -9,9 +9,8 @@ use super::{Gold, Tower, TowerControl, TOWER_ATTACK_RANGE};
 
 #[derive(Component)]
 pub struct Shot {
-    pub direction: Vec3,
     pub damage: u16,
-    pub target: Option<Entity>,
+    pub target: Option<(Entity, Vec3)>,
     pub animation_timer: Timer,
 }
 
@@ -81,12 +80,9 @@ pub fn spawn_shots_to_attack(
         }
         if let Some(enemy_position) = target_enemy_position {
             if tower.attack_speed.just_finished() {
-                let direction = (enemy_position - tower_position).normalize();
-
                 let shot = Shot {
-                    direction,
                     damage: tower.attack_damage,
-                    target: Some(*closest_enemy.unwrap()),
+                    target: Some((*closest_enemy.unwrap(), enemy_position)),
                     animation_timer: Timer::from_seconds(0.05, TimerMode::Repeating),
                 };
                 let (texture, atlas_handle) = tower_control
@@ -122,12 +118,13 @@ pub fn move_shots_to_enemies(
     wave_control: Res<WaveControl>,
 ) {
     for (shot_entity, mut transform, mut shot, mut shot_sprite) in &mut shots {
-        let next_position = shot.direction * SHOT_SPEED * time.delta_secs();
 
-        if let Some(target_entity) = shot.target {
+        if let Some((target_entity, _)) = shot.target {
             if let Ok((enemy_entity, enemy_transform, mut enemy)) = enemies.get_mut(target_entity) {
                 let direction = (enemy_transform.translation - transform.translation).normalize();
                 transform.translation += direction * SHOT_SPEED * time.delta_secs();
+
+                shot.target = Some((target_entity, enemy_transform.translation));
 
                 let distance = transform
                     .translation
@@ -162,26 +159,36 @@ pub fn move_shots_to_enemies(
                     }
                 }
             }
-        } else {
-            transform.translation += next_position;
         }
     }
 }
 
 pub fn check_if_target_enemy_exist(
-    mut shots: Query<(&mut Shot, &mut Sprite, &Transform, Entity)>,
+    mut shots: Query<(&mut Shot, &mut Sprite, &mut Transform, Entity)>,
     enemies: Query<Entity, With<Enemy>>,
     mut commands: Commands,
+    time: Res<Time>,
 ) {
-    for (mut shot, mut shot_sprite, transform, shot_entity) in &mut shots {
-        if let Some(target) = shot.target {
-            if !enemies.get(target).is_ok() {
-                shot.target = None
+    for (shot, mut shot_sprite, mut transform, shot_entity) in &mut shots {
+        if let Some((target, enemy_last_position)) = shot.target {
+            if enemies.get(target).is_ok() {
+                return;
             }
-        } else {
+
             if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
                 shot_texture_atlas.index = 0;
             }
+            let direction = (enemy_last_position - transform.translation).normalize();
+            let movement = direction * SHOT_SPEED * time.delta_secs();
+            let new_position = transform.translation + movement;
+
+            if new_position.distance_squared(enemy_last_position) <= SHOT_HURT_DISTANCE / 2.0 {
+                transform.translation = enemy_last_position;
+                commands.entity(shot_entity).despawn();
+            } else {
+                transform.translation = new_position;
+            }
+
             if transform
                 .translation
                 .truncate()
