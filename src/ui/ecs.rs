@@ -33,6 +33,8 @@ impl Plugin for UiPlugin {
     }
 }
 
+// This part is the stats/values the player have after start the game
+
 pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
     // think of this root_ui like a div in html that wraps all the other divs xd
     // it defines where the ui will be positioned, and from there, you spawn
@@ -170,6 +172,9 @@ pub fn update_ui_texts(
         }
     }
 }
+
+// this UI is the **start ui** to sign the message with the keypair and change
+// the `GameState` to start playing.
 
 pub fn spawn_sign_message_to_start(mut commands: Commands, player_signer: Res<PlayerSigner>) {
     let root_ui = commands
