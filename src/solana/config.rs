@@ -18,7 +18,7 @@ impl Plugin for SolanaPlugin {
         app.insert_resource(SolClient(setup_solana_client()))
             .insert_resource(PlayerSigner(load_keypair_from_file()))
             .insert_resource(WalletBalance(0))
-            .add_systems(Startup, (get_wallet_balance, sign_message));
+            .add_systems(Startup, get_wallet_balance);
     }
 }
 

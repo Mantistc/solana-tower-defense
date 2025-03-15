@@ -3,7 +3,7 @@ use solana_sdk::{native_token::LAMPORTS_PER_SOL, signer::Signer};
 
 use crate::{
     enemies::WaveControl,
-    solana::{PlayerSigner, WalletBalance, MESSAGE},
+    solana::{sign_message, PlayerSigner, WalletBalance, MESSAGE},
     tower_building::{GameState, Gold, Lifes},
 };
 
@@ -29,7 +29,7 @@ impl Plugin for UiPlugin {
                     )
                 }),
             )
-            .add_systems(Update, update_ui_texts);
+            .add_systems(Update, (sign_when_press_btn, update_ui_texts));
     }
 }
 
@@ -183,7 +183,7 @@ pub fn spawn_sign_message_to_start(mut commands: Commands, player_signer: Res<Pl
                 padding: UiRect::all(Val::Px(10.0)),
                 ..default()
             },
-            Name::new("start"),
+            Name::new("start ui"),
             BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.85)),
         ))
         .id();
@@ -267,4 +267,42 @@ pub fn spawn_sign_message_to_start(mut commands: Commands, player_signer: Res<Pl
                 TextColor(Color::srgb(0.0, 0.0, 0.0)),
             ));
     });
+}
+
+pub fn sign_when_press_btn(
+    mut interaction_query: Query<
+        (
+            &Interaction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &Children,
+        ),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut TextColor>,
+    player_signer: Res<PlayerSigner>,
+    mut game_state: ResMut<NextState<GameState>>,
+    mut commands: Commands,
+    entities: Query<(Entity, &Name), With<Node>>,
+) {
+    for (interaction, mut color, mut border_color, children) in &mut interaction_query {
+        let mut text_color = text_query.get_mut(children[0]).unwrap();
+
+        match *interaction {
+            Interaction::Pressed => {
+                *color = BLACK.into();
+                border_color.0 = WHITE.into();
+                text_color.0 = WHITE.into();
+                sign_message(&player_signer);
+                game_state.set(GameState::Building);
+                if let Some((start_ui_entity, _)) = entities
+                    .iter()
+                    .find(|(_, name)| name.as_str() == "start ui")
+                {
+                    commands.entity(start_ui_entity).despawn_recursive();
+                }
+            }
+            Interaction::Hovered | Interaction::None => {}
+        }
+    }
 }
