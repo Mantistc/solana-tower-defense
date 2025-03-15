@@ -27,7 +27,7 @@ pub fn get_wallet_balance(
     }
 }
 
-pub fn sign_message(signer: Res<PlayerSigner>) {
+pub fn sign_message(signer: &Res<PlayerSigner>) {
     let signature = signer.sign_message(MESSAGE.as_bytes());
     let is_valid_signature = signature.verify(&signer.pubkey().to_bytes(), MESSAGE.as_bytes());
     println!("valid signature: {:?}", is_valid_signature);
