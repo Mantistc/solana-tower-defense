@@ -198,7 +198,7 @@ pub fn setup_tower_zones(
             .spawn((
                 Sprite {
                     color: Color::srgba(0.0, 0.0, 0.0, 0.0),
-                    custom_size: Some(Vec2::splat(64.0)),
+                    custom_size: Some(Vec2::splat(TILE_SIZE * 4.0)),
                     ..default()
                 },
                 TowerPlacementZone,
