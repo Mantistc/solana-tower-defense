@@ -1,3 +1,5 @@
+use core::f32;
+
 use bevy::prelude::*;
 
 use crate::{
@@ -118,7 +120,6 @@ pub fn move_shots_to_enemies(
     wave_control: Res<WaveControl>,
 ) {
     for (shot_entity, mut transform, mut shot, mut shot_sprite) in &mut shots {
-
         if let Some((target_entity, _)) = shot.target {
             if let Ok((enemy_entity, enemy_transform, mut enemy)) = enemies.get_mut(target_entity) {
                 let direction = (enemy_transform.translation - transform.translation).normalize();
@@ -164,15 +165,15 @@ pub fn move_shots_to_enemies(
 }
 
 pub fn check_if_target_enemy_exist(
-    mut shots: Query<(&mut Shot, &mut Sprite, &mut Transform, Entity)>,
-    enemies: Query<Entity, With<Enemy>>,
+    mut shots: Query<(&Shot, &mut Sprite, &mut Transform, Entity), Without<Enemy>>,
+    enemies: Query<(Entity, &Transform), With<Enemy>>,
     mut commands: Commands,
     time: Res<Time>,
 ) {
     for (shot, mut shot_sprite, mut transform, shot_entity) in &mut shots {
         if let Some((target, enemy_last_position)) = shot.target {
             if enemies.get(target).is_ok() {
-                return;
+                continue;
             }
 
             if let Some(shot_texture_atlas) = &mut shot_sprite.texture_atlas {
@@ -182,7 +183,7 @@ pub fn check_if_target_enemy_exist(
             let movement = direction * SHOT_SPEED * time.delta_secs();
             let new_position = transform.translation + movement;
 
-            if new_position.distance_squared(enemy_last_position) <= SHOT_HURT_DISTANCE / 2.0 {
+            if new_position.distance_squared(enemy_last_position) <= 50.0 {
                 transform.translation = enemy_last_position;
                 commands.entity(shot_entity).despawn();
             } else {

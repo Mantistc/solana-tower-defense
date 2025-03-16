@@ -34,9 +34,9 @@ impl Plugin for TowersPlugin {
             .add_systems(
                 Update,
                 (
-                    check_if_target_enemy_exist,
                     spawn_shots_to_attack,
                     move_shots_to_enemies,
+                    check_if_target_enemy_exist,
                 ),
             );
     }

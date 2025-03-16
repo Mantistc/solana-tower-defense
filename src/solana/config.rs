@@ -3,14 +3,6 @@ use solana_client::rpc_client::RpcClient;
 
 use super::*;
 
-#[derive(Resource, Deref, DerefMut)]
-pub struct SolClient(pub RpcClient);
-
-pub fn setup_solana_client() -> RpcClient {
-    let rpc_url = "https://api.devnet.solana.com";
-    RpcClient::new(rpc_url.to_string())
-}
-
 pub struct SolanaPlugin;
 
 impl Plugin for SolanaPlugin {
@@ -24,3 +16,11 @@ impl Plugin for SolanaPlugin {
 
 pub const WALLET_PATH: &str = "keypair/wallet.json";
 pub const MESSAGE: &str = "Sign this message to start the game, anon.";
+
+#[derive(Resource, Deref, DerefMut)]
+pub struct SolClient(pub RpcClient);
+
+pub fn setup_solana_client() -> RpcClient {
+    let rpc_url = "https://api.devnet.solana.com";
+    RpcClient::new(rpc_url.to_string())
+}
