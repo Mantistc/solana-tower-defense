@@ -15,6 +15,7 @@ pub enum TextType {
     WaveCountText,
     LifesText,
     WalletBalanceText,
+    WalletAddress,
 }
 
 impl Plugin for UiPlugin {
@@ -26,11 +27,11 @@ impl Plugin for UiPlugin {
 }
 
 // This part is the stats/values the player have after start the game
-
-pub fn spawn_game_ui(mut commands: Commands) {
+pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
     // think of this root_ui like a div in html that wraps all the other divs xd
     // it defines where the ui will be positioned, and from there, you spawn
     // the rest of the components as children. Pretty much like how you'd do it in html
+    let border_and_text_color = Color::srgb(224.0 / 255.0, 162.0 / 255.0, 125.0 / 255.0);
     let root_ui = commands
         .spawn((
             Node {
@@ -41,21 +42,20 @@ pub fn spawn_game_ui(mut commands: Commands) {
                 flex_direction: FlexDirection::Column,
                 padding: UiRect::all(Val::Px(10.0)),
                 position_type: PositionType::Absolute,
-                left: Val::Percent(44.0),
+                right: Val::Percent(3.0),
                 border: UiRect::all(Val::Px(5.0)),
-                top: Val::Percent(5.0),
+                top: Val::Percent(60.0),
                 ..default()
             },
-            BorderColor(WHITE.into()),
+            BorderColor(border_and_text_color),
             BorderRadius::all(Val::Px(15.0)),
-            Transform::from_translation(Vec3::new(-100.0, 0.0, 0.0)),
             Name::new("UI Root"),
-            BackgroundColor(Color::srgb(24.0 / 255.0, 129.0 / 255.0, 161.0 / 255.0)),
+            BackgroundColor(Color::srgb(78.0 / 255.0, 43.0 / 255.0, 47.0 / 255.0)),
         ))
         .id();
 
-    let add_top_padding = |commands: &mut Commands, parent: Entity, px: f32| {
-        commands.entity(parent).with_children(|p| {
+    let add_top_padding = |commands: &mut Commands, px: f32| {
+        commands.entity(root_ui).with_children(|p| {
             p.spawn(Node {
                 height: Val::Px(px),
                 ..default()
@@ -63,63 +63,50 @@ pub fn spawn_game_ui(mut commands: Commands) {
         });
     };
 
-    let _gold_text = commands.entity(root_ui).with_children(|parent| {
-        parent.spawn((
-            Text::new("Gold: 0"),
-            TextFont {
-                font_size: 15.0,
-                ..default()
-            },
-            TextLayout::new_with_justify(JustifyText::Center),
-            TextColor(WHITE.into()),
-            TextType::GoldText,
-        ));
-    });
+    let create_text = |commands: &mut Commands, text: &str, text_type: TextType| {
+        commands.entity(root_ui).with_children(|p| {
+            p.spawn((
+                Text::new(text),
+                TextFont {
+                    font_size: 15.0,
+                    ..default()
+                },
+                TextLayout::new_with_justify(JustifyText::Center),
+                TextColor(border_and_text_color),
+                text_type,
+            ));
+        });
+    };
 
-    add_top_padding(&mut commands, root_ui, 10.0);
+    let _gold_text = create_text(&mut commands, "Gold: 0", TextType::GoldText);
 
-    let _wave_count_text = commands.entity(root_ui).with_children(|parent| {
-        parent.spawn((
-            Text::new("Wave Count: 0"),
-            TextFont {
-                font_size: 15.0,
-                ..default()
-            },
-            TextLayout::new_with_justify(JustifyText::Right),
-            TextColor(WHITE.into()),
-            TextType::WaveCountText,
-        ));
-    });
+    add_top_padding(&mut commands, 10.0);
+    let _wave_count_text = create_text(&mut commands, "Wave Count: 0", TextType::WaveCountText);
 
-    add_top_padding(&mut commands, root_ui, 10.0);
+    add_top_padding(&mut commands, 10.0);
+    let _lifes_text = create_text(&mut commands, "Lifes: 30", TextType::LifesText);
 
-    let _lifes = commands.entity(root_ui).with_children(|parent| {
-        parent.spawn((
-            Text::new("Lifes: 30"),
-            TextFont {
-                font_size: 15.0,
-                ..default()
-            },
-            TextLayout::new_with_justify(JustifyText::Right),
-            TextColor(WHITE.into()),
-            TextType::LifesText,
-        ));
-    });
+    add_top_padding(&mut commands, 35.0);
+    let _sol_balance_text = create_text(
+        &mut commands,
+        "Sol Balance: 0.0",
+        TextType::WalletBalanceText,
+    );
 
-    add_top_padding(&mut commands, root_ui, 10.0);
+    add_top_padding(&mut commands, 10.0);
 
-    let _sol_balance = commands.entity(root_ui).with_children(|parent| {
-        parent.spawn((
-            Text::new("Sol Balance: 0.0"),
-            TextFont {
-                font_size: 15.0,
-                ..default()
-            },
-            TextLayout::new_with_justify(JustifyText::Right),
-            TextColor(WHITE.into()),
-            TextType::WalletBalanceText,
-        ));
-    });
+    let wallet_str = wallet.0.pubkey().to_string();
+    let shortened_wallet = format!(
+        "{}...{}",
+        &wallet_str[0..4],
+        &wallet_str[wallet_str.len() - 4..]
+    );
+
+    let _wallet_address = create_text(
+        &mut commands,
+        &format!("Wallet Address: {}", shortened_wallet),
+        TextType::WalletAddress,
+    );
 }
 
 pub fn update_ui_texts(
@@ -140,6 +127,7 @@ pub fn update_ui_texts(
                     wallet_balance.0 as f32 / LAMPORTS_PER_SOL as f32
                 )
             }
+            TextType::WalletAddress => {}
         }
     }
 }
