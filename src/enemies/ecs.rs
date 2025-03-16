@@ -62,6 +62,11 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
         wave_control.time_between_waves.pause();
         let wave_image = &wave_control.textures[wave_control.wave_count as usize];
         let enemy_animation = &wave_control.animations[wave_control.wave_count as usize];
+        let enemy_life = (INITIAL_ENEMY_LIFE as f32
+            * (1.2 + SCALAR).powf(wave_control.wave_count as f32))
+        .round() as u16;
+        let enemy_speed = (75.0 * (1.05f32).powf(wave_control.wave_count as f32)).min(300.0);
+        info!("enemy life: {}, enemy speed: {:?}", enemy_life, enemy_speed);
         commands.spawn((
             Sprite::from_atlas_image(
                 wave_image.0.clone(),
@@ -76,11 +81,9 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
                 ..default()
             },
             Enemy {
-                life: (INITIAL_ENEMY_LIFE as f32
-                    * (1.2 + SCALAR).powf(wave_control.wave_count as f32))
-                .round() as u16,
+                life: enemy_life,
 
-                speed: (75.0 * (1.05f32).powf(wave_control.wave_count as f32)).min(300.0),
+                speed: enemy_speed,
             },
             enemy_animation.clone(),
             BreakPointLvl(0),
