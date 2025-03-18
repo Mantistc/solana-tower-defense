@@ -48,7 +48,7 @@ fn default_pluggins() -> PluginGroupBuilder {
 }
 
 
-// Think of this like a .env we use in node js
+// Think of this like a .env
 #[toml_cfg::toml_config]
 pub struct Variables {
     #[default("")]
