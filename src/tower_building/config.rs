@@ -23,6 +23,7 @@ impl Plugin for TowersPlugin {
                     setup_tower_zones,
                     buy_tower,
                     upgrade_tower,
+                    delete_all_shots_on_building
                 )
                     .run_if(in_state(GameState::Building)),),
             )

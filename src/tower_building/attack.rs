@@ -201,3 +201,12 @@ pub fn check_if_target_enemy_exist(
         }
     }
 }
+
+// this is necessary because, at the end of a wave, some shots can get stuck when the GameState
+// switches to Building, causing all shot-related systems to stop running. this ensures any
+// remaining shots are properly removed
+pub fn delete_all_shots_on_building(mut shots: Query<Entity, With<Shot>>, mut commands: Commands) {
+    for shot in &mut shots {
+        commands.entity(shot).despawn();
+    }
+}
