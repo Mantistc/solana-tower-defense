@@ -47,3 +47,4 @@ wasm_out/
 _assets
 
 cfg.toml
+keypair
