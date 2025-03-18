@@ -1,0 +1,4 @@
+[solana-tower-defense]
+sol_rpc = "https://api.devnet.solana.com"
+payment_wallet = "aeyXiefToUehkVLHacHSMU8s15SA35QJSTJZHeMRuaq"
+signer_wallet_path = "keypair/wallet.json"

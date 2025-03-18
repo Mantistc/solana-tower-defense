@@ -31,7 +31,15 @@ pub struct Wallet {
 pub fn load_keypair_from_file() -> Arc<Keypair> {
     // if there is no wallet available in the *signer_wallet_path*, a new one will be generated to sign the message
     // but, probably the cfg.toml will not allow the program to compile if there is something missing
-    Arc::new(Keypair::read_from_file(VARIABLES.signer_wallet_path).unwrap_or(Keypair::new()))
+    Arc::new(
+        Keypair::read_from_file(VARIABLES.signer_wallet_path).unwrap_or_else(|e| {
+            error!(
+                "failed to load signer wallet from '{}': {:?}",
+                VARIABLES.signer_wallet_path, e
+            );
+            Keypair::new()
+        }),
+    )
 }
 
 pub fn sign_message(wallet: &Res<Wallet>) {
