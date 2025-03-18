@@ -57,6 +57,11 @@ cargo run --release
 
 ---
 
+## License
+This project is licensed under the **MIT License** – see the [LICENSE](./LICENSE) file for details.
+
+--
+
 <p align="center">
   Made with ❤️ by <a href="https://twitter.com/lich01_" target="_blank">@lich.sol</a>
 </p>
