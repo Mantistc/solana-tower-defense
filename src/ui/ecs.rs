@@ -3,7 +3,7 @@ use solana_sdk::{native_token::LAMPORTS_PER_SOL, signer::Signer};
 
 use crate::{
     enemies::WaveControl,
-    solana::{sign_message, PlayerSigner, WalletBalance, MESSAGE},
+    solana::{sign_message, Wallet, MESSAGE},
     tower_building::{GameState, Gold, Lifes},
 };
 
@@ -27,7 +27,7 @@ impl Plugin for UiPlugin {
 }
 
 // This part is the stats/values the player have after start the game
-pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
+pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
     // think of this root_ui like a div in html that wraps all the other divs xd
     // it defines where the ui will be positioned, and from there, you spawn
     // the rest of the components as children. Pretty much like how you'd do it in html
@@ -95,7 +95,7 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
 
     add_top_padding(&mut commands, 10.0);
 
-    let wallet_str = wallet.0.pubkey().to_string();
+    let wallet_str = wallet.keypair.pubkey().to_string();
     let shortened_wallet = format!(
         "{}...{}",
         &wallet_str[0..4],
@@ -111,9 +111,9 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<PlayerSigner>) {
 
 pub fn update_ui_texts(
     mut texts: Query<(&mut Text, &TextType)>,
-    resources: (Res<Gold>, Res<Lifes>, Res<WalletBalance>, Res<WaveControl>),
+    resources: (Res<Gold>, Res<Lifes>, Res<Wallet>, Res<WaveControl>),
 ) {
-    let (gold, lifes, wallet_balance, wave_control) = resources;
+    let (gold, lifes, wallet, wave_control) = resources;
     for (mut text, text_type) in &mut texts {
         match text_type {
             TextType::GoldText => text.0 = format!("Gold: {:?}", gold.0),
@@ -124,7 +124,7 @@ pub fn update_ui_texts(
             TextType::WalletBalanceText => {
                 text.0 = format!(
                     "Sol Balance: {:.2}",
-                    wallet_balance.0 as f32 / LAMPORTS_PER_SOL as f32
+                    wallet.balance as f32 / LAMPORTS_PER_SOL as f32
                 )
             }
             TextType::WalletAddress => {}
@@ -135,7 +135,7 @@ pub fn update_ui_texts(
 // this UI is the **start ui** to sign the message with the keypair and change
 // the `GameState` to start playing.
 
-pub fn spawn_sign_message_to_start(mut commands: Commands, player_signer: Res<PlayerSigner>) {
+pub fn spawn_sign_message_to_start(mut commands: Commands, wallet: Res<Wallet>) {
     let root_ui = commands
         .spawn((
             Node {
@@ -193,7 +193,7 @@ pub fn spawn_sign_message_to_start(mut commands: Commands, player_signer: Res<Pl
         parent.spawn((
             Text::new(format!(
                 "Signer address: {}",
-                player_signer.pubkey().to_string()
+                wallet.keypair.pubkey().to_string()
             )),
             TextFont {
                 font_size: 15.0,
@@ -244,7 +244,7 @@ pub fn sign_when_press_btn(
         (Changed<Interaction>, With<Button>),
     >,
     mut text_query: Query<&mut TextColor>,
-    player_signer: Res<PlayerSigner>,
+    wallet: Res<Wallet>,
     mut game_state: ResMut<NextState<GameState>>,
     mut commands: Commands,
     entities: Query<(Entity, &Name), With<Node>>,
@@ -254,7 +254,7 @@ pub fn sign_when_press_btn(
 
         match *interaction {
             Interaction::Pressed => {
-                sign_message(&player_signer);
+                sign_message(&wallet);
                 game_state.set(GameState::Building);
                 if let Some((start_ui_entity, _)) = entities
                     .iter()
