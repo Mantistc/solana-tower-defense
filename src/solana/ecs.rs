@@ -95,3 +95,16 @@ pub fn update_wallet_balance(mut wallet: ResMut<Wallet>) {
         }
     }
 }
+
+pub fn process_tx_tasks(mut wallet_tasks: ResMut<Wallet>) {
+    if let Some(mut task) = wallet_tasks.transaction_tasks.pop_front() {
+        if let Some(result) = block_on(poll_once(&mut task)) {
+            match result {
+                Ok(signature) => info!("sol sent, tx signature: {:?}", signature),
+                Err(e) => error!("failed to send transaction: {:?}", e),
+            }
+        } else {
+            wallet_tasks.transaction_tasks.push_front(task);
+        }
+    }
+}

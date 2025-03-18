@@ -18,9 +18,12 @@ impl Plugin for SolanaPlugin {
                 balance: 0,
                 status_delay: Timer::from_seconds(5.0, TimerMode::Repeating),
                 balance_task: None,
-                transaction_tasks: VecDeque::new()
+                transaction_tasks: VecDeque::new(),
             })
-            .add_systems(Update, (check_balance, update_wallet_balance));
+            .add_systems(
+                Update,
+                (check_balance, update_wallet_balance, process_tx_tasks),
+            );
     }
 }
 
