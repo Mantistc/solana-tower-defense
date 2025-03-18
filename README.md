@@ -1,3 +1,5 @@
+# 🚧 WORK STILL IN PROGRESS 🚧
+
 # Solana Tower Defense
 
 A **Tower Defense game** built with **Bevy** and integrated with **Solana** blockchain. Defend your base while interacting with Solana for in-game transactions, rewards, and wallet-based mechanics.
