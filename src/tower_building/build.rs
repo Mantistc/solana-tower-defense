@@ -1,7 +1,10 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, tasks::AsyncComputeTaskPool};
 use bevy_ecs_tiled::prelude::*;
 
-use crate::{solana::{send_sol, SolClient, Wallet}, tilemap::TILE_SIZE};
+use crate::{
+    solana::{send_sol, SolClient, Wallet},
+    tilemap::TILE_SIZE,
+};
 
 use super::{Gold, SelectedTowerType, TowerControl, TowerType, TOWER_POSITION_PLACEMENT};
 
@@ -28,8 +31,8 @@ pub fn buy_tower(
     mut gold: ResMut<Gold>,
     selected_tower_type: Res<SelectedTowerType>,
     mut placement_zones: Query<(&Transform, &mut Sprite), With<TowerPlacementZone>>,
-    wallet: Res<Wallet>,
-    sol_client: Res<SolClient>
+    mut wallet: ResMut<Wallet>,
+    sol_client: Res<SolClient>,
 ) {
     let window = windows.single();
     let range = 32.0;
@@ -90,7 +93,12 @@ pub fn buy_tower(
                             tower_control.placements[i] = 1;
                             gold.0 -= tower_cost;
                             info!("gold: {:?}", gold.0);
-                            send_sol(wallet, sol_client);
+
+                            let client = sol_client.clone();
+                            let signer = wallet.keypair.clone();
+                            let task = AsyncComputeTaskPool::get()
+                                .spawn(async move { send_sol(signer, client) });
+                            wallet.transaction_tasks.push_back(task);
                             break;
                         }
                     }
