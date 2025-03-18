@@ -46,4 +46,4 @@ wasm_out/
 *.html
 _assets
 
-keypair
+cfg.toml

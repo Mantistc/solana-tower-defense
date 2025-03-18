@@ -46,3 +46,15 @@ fn default_pluggins() -> PluginGroupBuilder {
             ..default()
         })
 }
+
+
+// Think of this like a .env we use in node js
+#[toml_cfg::toml_config]
+pub struct Variables {
+    #[default("")]
+    sol_rpc: &'static str,
+    #[default("")]
+    payment_wallet: &'static str,
+    #[default("")]
+    signer_wallet_path: &'static str,
+}
