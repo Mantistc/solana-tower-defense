@@ -37,7 +37,8 @@ impl Plugin for TowersPlugin {
                     spawn_shots_to_attack,
                     move_shots_to_enemies,
                     check_if_target_enemy_exist,
-                ),
+                )
+                    .run_if(in_state(GameState::Attacking)),
             );
     }
 }
