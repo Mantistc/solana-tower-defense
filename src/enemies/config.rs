@@ -11,7 +11,7 @@ use crate::tower_building::GameState;
 use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 
 pub const MAX_ENEMIES_PER_WAVE: u8 = 25;
-pub const SPAWN_Y_LOCATION: f32 = 150.0;
+pub const SPAWN_Y_LOCATION: f32 = 70.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
 pub const TIME_BETWEEN_WAVES: f32 = 15.0;
 pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
