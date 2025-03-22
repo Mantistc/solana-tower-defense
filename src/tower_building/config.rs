@@ -23,7 +23,7 @@ impl Plugin for TowersPlugin {
                     setup_tower_zones,
                     buy_tower,
                     upgrade_tower,
-                    delete_all_shots_on_building
+                    delete_all_shots_on_building,
                 )
                     .run_if(in_state(GameState::Building)),),
             )
@@ -55,21 +55,21 @@ pub const INITIAL_PLAYER_GOLD: u16 = 95;
 pub const MAX_LIFES: u8 = 30;
 
 pub const TOWER_POSITION_PLACEMENT: [Vec2; 15] = [
-    Vec2::new(17.0, 16.0),
-    Vec2::new(-112.0, 16.0),
-    Vec2::new(144.0, 16.0),
-    Vec2::new(-206.0, 270.0),
-    Vec2::new(-335.0, 270.0),
-    Vec2::new(-464.0, 270.0),
-    Vec2::new(-240.0, -240.0),
-    Vec2::new(-112.0, -240.0),
-    Vec2::new(17.0, -240.0),
-    Vec2::new(144.5, -240.0),
-    Vec2::new(272.5, -240.0),
-    Vec2::new(400.0, 53.0),
-    Vec2::new(560.0, 53.0),
-    Vec2::new(400.0, 270.0),
-    Vec2::new(560.0, 270.0),
+    Vec2::new(17.0, -64.0),       // 16 - 80
+    Vec2::new(-112.0, -64.0),     // 16 - 80
+    Vec2::new(144.0, -64.0),      // 16 - 80
+    Vec2::new(-206.0, 190.0),     // 270 - 80
+    Vec2::new(-335.0, 190.0),     // 270 - 80
+    Vec2::new(-464.0, 190.0),     // 270 - 80
+    Vec2::new(-240.0, -320.0),    // -240 - 80
+    Vec2::new(-112.0, -320.0),    // -240 - 80
+    Vec2::new(17.0, -320.0),      // -240 - 80
+    Vec2::new(144.5, -320.0),     // -240 - 80
+    Vec2::new(272.5, -320.0),     // -240 - 80
+    Vec2::new(400.0, -27.0),      // 53 - 80
+    Vec2::new(560.0, -27.0),      // 53 - 80
+    Vec2::new(400.0, 190.0),      // 270 - 80
+    Vec2::new(560.0, 190.0),      // 270 - 80
 ];
 
 #[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
