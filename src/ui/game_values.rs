@@ -26,10 +26,7 @@ impl Plugin for UiPlugin {
         app.add_systems(Startup, spawn_sign_message_to_start)
             .add_systems(OnExit(GameState::Start), spawn_how_to_play_ui)
             .add_systems(OnExit(GameState::HowToPlay), spawn_game_ui)
-            .add_systems(
-                Update,
-                (handle_btn_interaction, update_ui_texts),
-            );
+            .add_systems(Update, (handle_btn_interaction, update_ui_texts));
     }
 }
 
@@ -61,53 +58,52 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
         ))
         .id();
 
-    let add_top_padding = |commands: &mut Commands, px: f32| {
-        commands.entity(root_ui).with_children(|p| {
-            p.spawn(Node {
-                height: Val::Px(px),
-                ..default()
+    let create_text =
+        |commands: &mut Commands, text: &str, text_type: TextType, bottom_padding: f32| {
+            commands.entity(root_ui).with_children(|p| {
+                p.spawn((
+                    Text::new(text),
+                    TextFont {
+                        font_size: 15.0,
+                        ..default()
+                    },
+                    TextLayout::new_with_justify(JustifyText::Center),
+                    TextColor(border_and_text_color),
+                    text_type,
+                ));
             });
-        });
-    };
-
-    let create_text = |commands: &mut Commands, text: &str, text_type: TextType| {
-        commands.entity(root_ui).with_children(|p| {
-            p.spawn((
-                Text::new(text),
-                TextFont {
-                    font_size: 15.0,
+            commands.entity(root_ui).with_children(|p| {
+                p.spawn(Node {
+                    height: Val::Px(bottom_padding),
                     ..default()
-                },
-                TextLayout::new_with_justify(JustifyText::Center),
-                TextColor(border_and_text_color),
-                text_type,
-            ));
-        });
-    };
+                });
+            });
+        };
 
-    let _gold_text = create_text(&mut commands, "Gold: 0", TextType::GoldText);
+    let _gold_text = create_text(&mut commands, "Gold: 0", TextType::GoldText, 10.0);
 
-    add_top_padding(&mut commands, 10.0);
-    let _wave_count_text = create_text(&mut commands, "Wave Count: 0", TextType::WaveCountText);
+    let _wave_count_text = create_text(
+        &mut commands,
+        "Wave Count: 0",
+        TextType::WaveCountText,
+        10.0,
+    );
 
-    add_top_padding(&mut commands, 10.0);
-    let _lifes_text = create_text(&mut commands, "Lifes: 30", TextType::LifesText);
+    let _lifes_text = create_text(&mut commands, "Lifes: 30", TextType::LifesText, 10.0);
 
-    add_top_padding(&mut commands, 10.0);
     let _lifes_text = create_text(
         &mut commands,
         "Time to build: 15.0 secs",
         TextType::TimeToBuildText,
+        20.0,
     );
 
-    add_top_padding(&mut commands, 35.0);
     let _sol_balance_text = create_text(
         &mut commands,
         "Sol Balance: 0.0",
         TextType::WalletBalanceText,
+        10.0,
     );
-
-    add_top_padding(&mut commands, 10.0);
 
     let wallet_str = wallet.keypair.pubkey().to_string();
     let shortened_wallet = format!(
@@ -120,6 +116,7 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
         &mut commands,
         &format!("Wallet Address: {}", shortened_wallet),
         TextType::WalletAddressText,
+        10.0,
     );
 }
 
