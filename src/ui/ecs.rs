@@ -16,6 +16,7 @@ pub enum TextType {
     LifesText,
     WalletBalanceText,
     WalletAddress,
+    TimeToBuild,
 }
 
 impl Plugin for UiPlugin {
@@ -86,6 +87,13 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
     add_top_padding(&mut commands, 10.0);
     let _lifes_text = create_text(&mut commands, "Lifes: 30", TextType::LifesText);
 
+    add_top_padding(&mut commands, 10.0);
+    let _lifes_text = create_text(
+        &mut commands,
+        "Time to build: 15.0 secs",
+        TextType::TimeToBuild,
+    );
+
     add_top_padding(&mut commands, 35.0);
     let _sol_balance_text = create_text(
         &mut commands,
@@ -111,9 +119,10 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
 
 pub fn update_ui_texts(
     mut texts: Query<(&mut Text, &TextType)>,
-    resources: (Res<Gold>, Res<Lifes>, Res<Wallet>, Res<WaveControl>),
+    resources: (Res<Gold>, Res<Lifes>, Res<Wallet>, ResMut<WaveControl>),
+    time: Res<Time>,
 ) {
-    let (gold, lifes, wallet, wave_control) = resources;
+    let (gold, lifes, wallet, mut wave_control) = resources;
     for (mut text, text_type) in &mut texts {
         match text_type {
             TextType::GoldText => text.0 = format!("Gold: {:?}", gold.0),
@@ -128,6 +137,17 @@ pub fn update_ui_texts(
                 )
             }
             TextType::WalletAddress => {}
+            TextType::TimeToBuild => {
+                wave_control.time_between_waves.tick(time.delta());
+                text.0 = if wave_control.time_between_spawns.paused() {
+                    format!("Time to Build: {:.2} secs", 0.0)
+                } else {
+                    format!(
+                        "Time to Build: {:.2} secs",
+                        wave_control.time_between_waves.remaining_secs()
+                    )
+                }
+            }
         }
     }
 }
