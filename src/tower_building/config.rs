@@ -78,6 +78,7 @@ pub enum GameState {
     Attacking,
     GameOver,
     Start,
+    HowToPlay,
 }
 
 impl Default for GameState {
