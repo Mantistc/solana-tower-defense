@@ -17,14 +17,19 @@ pub enum TextType {
     WaveCountText,
     LifesText,
     WalletBalanceText,
-    TimeToBuild,
+    TimeToBuildText,
+    WalletAddressText,
 }
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_sign_message_to_start)
-            .add_systems(OnExit(GameState::Start), spawn_game_ui)
-            .add_systems(Update, (sign_when_press_btn, update_ui_texts));
+            .add_systems(OnExit(GameState::Start), spawn_how_to_play_ui)
+            .add_systems(OnExit(GameState::HowToPlay), spawn_game_ui)
+            .add_systems(
+                Update,
+                (handle_btn_interaction, update_ui_texts),
+            );
     }
 }
 
@@ -65,47 +70,41 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
         });
     };
 
-    let create_text = |commands: &mut Commands, text: &str, text_type: Option<TextType>| {
+    let create_text = |commands: &mut Commands, text: &str, text_type: TextType| {
         commands.entity(root_ui).with_children(|p| {
-            if let Some(text_type_value) = text_type {
-                p.spawn((
-                    Text::new(text),
-                    TextFont {
-                        font_size: 15.0,
-                        ..default()
-                    },
-                    TextLayout::new_with_justify(JustifyText::Center),
-                    TextColor(border_and_text_color),
-                    text_type_value,
-                ));
-            }
+            p.spawn((
+                Text::new(text),
+                TextFont {
+                    font_size: 15.0,
+                    ..default()
+                },
+                TextLayout::new_with_justify(JustifyText::Center),
+                TextColor(border_and_text_color),
+                text_type,
+            ));
         });
     };
 
-    let _gold_text = create_text(&mut commands, "Gold: 0", Some(TextType::GoldText));
+    let _gold_text = create_text(&mut commands, "Gold: 0", TextType::GoldText);
 
     add_top_padding(&mut commands, 10.0);
-    let _wave_count_text = create_text(
-        &mut commands,
-        "Wave Count: 0",
-        Some(TextType::WaveCountText),
-    );
+    let _wave_count_text = create_text(&mut commands, "Wave Count: 0", TextType::WaveCountText);
 
     add_top_padding(&mut commands, 10.0);
-    let _lifes_text = create_text(&mut commands, "Lifes: 30", Some(TextType::LifesText));
+    let _lifes_text = create_text(&mut commands, "Lifes: 30", TextType::LifesText);
 
     add_top_padding(&mut commands, 10.0);
     let _lifes_text = create_text(
         &mut commands,
         "Time to build: 15.0 secs",
-        Some(TextType::TimeToBuild),
+        TextType::TimeToBuildText,
     );
 
     add_top_padding(&mut commands, 35.0);
     let _sol_balance_text = create_text(
         &mut commands,
         "Sol Balance: 0.0",
-        Some(TextType::WalletBalanceText),
+        TextType::WalletBalanceText,
     );
 
     add_top_padding(&mut commands, 10.0);
@@ -120,7 +119,7 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
     let _wallet_address = create_text(
         &mut commands,
         &format!("Wallet Address: {}", shortened_wallet),
-        None,
+        TextType::WalletAddressText,
     );
 }
 
@@ -144,7 +143,7 @@ pub fn update_ui_texts(
                     wallet.balance as f32 / LAMPORTS_PER_SOL as f32
                 )
             }
-            TextType::TimeToBuild => {
+            TextType::TimeToBuildText => {
                 if !wave_control.time_between_waves.paused() {
                     wave_control.time_between_waves.tick(time.delta());
                     text.0 = format!(
@@ -152,6 +151,9 @@ pub fn update_ui_texts(
                         wave_control.time_between_waves.remaining_secs()
                     );
                 }
+            }
+            TextType::WalletAddressText => {
+                // here we can add logic to update the text wallet address if the wallet change in any time
             }
         }
     }
