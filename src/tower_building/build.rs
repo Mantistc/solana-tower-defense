@@ -22,7 +22,7 @@ pub struct Tower(pub TowerInfo);
 /// Handles the process of buying and placing a tower on the map.
 /// It checks the player's gold, highlights valid placement zones,
 /// and spawns the selected tower if conditions are met.
-pub fn buy_tower(
+pub fn buy_and_spawn_tower(
     windows: Query<&Window>,
     buttons: Res<ButtonInput<MouseButton>>,
     camera_query: Query<(&Camera, &GlobalTransform)>,

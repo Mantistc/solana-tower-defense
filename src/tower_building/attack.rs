@@ -29,7 +29,7 @@ pub struct Shot {
 /// The shot is assigned a direction towards the targeted enemy and carries the tower's damage value. It includes
 /// an animation timer and uses a **texture atlas** to handle sprite animation.
 
-pub fn spawn_shots_to_attack(
+pub fn spawn_shots(
     enemies: Query<(&Transform, &BreakPointLvl, Entity), (Without<Tower>, With<Enemy>)>,
     mut towers: Query<(&Transform, &mut Tower)>,
     mut commands: Commands,
@@ -164,7 +164,7 @@ pub fn move_shots_to_enemies(
     }
 }
 
-pub fn check_if_target_enemy_exist(
+pub fn despawn_shots_with_killed_target(
     mut shots: Query<(&Shot, &mut Sprite, &mut Transform, Entity), Without<Enemy>>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     mut commands: Commands,
