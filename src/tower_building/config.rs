@@ -21,9 +21,9 @@ impl Plugin for TowersPlugin {
                 ((
                     select_tower_type,
                     setup_tower_zones,
-                    buy_tower,
+                    buy_and_spawn_tower,
                     upgrade_tower,
-                    delete_all_shots_on_building
+                    delete_all_shots_on_building,
                 )
                     .run_if(in_state(GameState::Building)),),
             )
@@ -35,9 +35,9 @@ impl Plugin for TowersPlugin {
             .add_systems(
                 Update,
                 (
-                    spawn_shots_to_attack,
+                    spawn_shots,
                     move_shots_to_enemies,
-                    check_if_target_enemy_exist,
+                    despawn_shots_with_killed_target,
                 )
                     .run_if(in_state(GameState::Attacking)),
             );
@@ -55,21 +55,21 @@ pub const INITIAL_PLAYER_GOLD: u16 = 95;
 pub const MAX_LIFES: u8 = 30;
 
 pub const TOWER_POSITION_PLACEMENT: [Vec2; 15] = [
-    Vec2::new(17.0, 16.0),
-    Vec2::new(-112.0, 16.0),
-    Vec2::new(144.0, 16.0),
-    Vec2::new(-206.0, 270.0),
-    Vec2::new(-335.0, 270.0),
-    Vec2::new(-464.0, 270.0),
-    Vec2::new(-240.0, -240.0),
-    Vec2::new(-112.0, -240.0),
-    Vec2::new(17.0, -240.0),
-    Vec2::new(144.5, -240.0),
-    Vec2::new(272.5, -240.0),
-    Vec2::new(400.0, 53.0),
-    Vec2::new(560.0, 53.0),
-    Vec2::new(400.0, 270.0),
-    Vec2::new(560.0, 270.0),
+    Vec2::new(17.0, -64.0),    // 16 - 80
+    Vec2::new(-112.0, -64.0),  // 16 - 80
+    Vec2::new(144.0, -64.0),   // 16 - 80
+    Vec2::new(-206.0, 190.0),  // 270 - 80
+    Vec2::new(-335.0, 190.0),  // 270 - 80
+    Vec2::new(-464.0, 190.0),  // 270 - 80
+    Vec2::new(-240.0, -320.0), // -240 - 80
+    Vec2::new(-112.0, -320.0), // -240 - 80
+    Vec2::new(17.0, -320.0),   // -240 - 80
+    Vec2::new(144.5, -320.0),  // -240 - 80
+    Vec2::new(272.5, -320.0),  // -240 - 80
+    Vec2::new(400.0, -27.0),   // 53 - 80
+    Vec2::new(560.0, -27.0),   // 53 - 80
+    Vec2::new(400.0, 190.0),   // 270 - 80
+    Vec2::new(560.0, 190.0),   // 270 - 80
 ];
 
 #[derive(States, Debug, Clone, Eq, PartialEq, Hash)]
@@ -78,6 +78,7 @@ pub enum GameState {
     Attacking,
     GameOver,
     Start,
+    HowToPlay,
 }
 
 impl Default for GameState {
@@ -176,6 +177,7 @@ pub fn load_towers_sprites(
     let mut textures = HashMap::new();
     let mut shot_textures = HashMap::new();
 
+    // TODO: i need to draw the next lvl sprites of this towers xdd
     let tower_sprites = vec![
         ((TowerType::Lich, 1), "towers/lich_01_tower.png"),
         ((TowerType::Lich, 2), "towers/lich_01_tower.png"),
