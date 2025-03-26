@@ -124,9 +124,8 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
 pub fn update_ui_texts(
     mut texts: Query<(&mut Text, &TextType)>,
     resources: (Res<Gold>, Res<Lifes>, Res<Wallet>, ResMut<WaveControl>),
-    time: Res<Time>,
 ) {
-    let (gold, lifes, wallet, mut wave_control) = resources;
+    let (gold, lifes, wallet, wave_control) = resources;
     for (mut text, text_type) in &mut texts {
         match text_type {
             TextType::GoldText => text.0 = format!("Gold: {:?}", gold.0),
@@ -142,9 +141,8 @@ pub fn update_ui_texts(
             }
             TextType::TimeToBuildText => {
                 if !wave_control.time_between_waves.paused() {
-                    wave_control.time_between_waves.tick(time.delta());
                     text.0 = format!(
-                        "Time to Build: {:.2} secs",
+                        "Time to Build: {:.1} secs",
                         wave_control.time_between_waves.remaining_secs()
                     );
                 }
