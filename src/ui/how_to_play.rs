@@ -80,7 +80,7 @@ pub fn spawn_how_to_play_ui(mut commands: Commands) {
 
     let _explaining = create_text(
         &mut commands,
-        "E - Electric Tower: Slow but deals heavy damage.",
+        "N - Necro Tower: Slow but deals heavy damage.",
         15.0,
         35.0,
     );
