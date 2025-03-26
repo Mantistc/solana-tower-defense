@@ -4,14 +4,11 @@
 //! This file handles that, so if you want enemies to attack faster, deal more damage, or take more hits,
 //! this is where you make the changes.
 
+use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
 use bevy::prelude::*;
 
-use crate::tower_building::GameState;
-
-use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
-
 pub const MAX_ENEMIES_PER_WAVE: u8 = 25;
-pub const SPAWN_Y_LOCATION: f32 = 70.0;
+pub const SPAWN_Y_LOCATION: f32 = 80.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
 pub const TIME_BETWEEN_WAVES: f32 = 15.0;
 pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
@@ -40,6 +37,9 @@ pub struct WaveControl {
 
     /// Timer controlling the interval between waves.
     pub time_between_waves: Timer,
+
+    /// Value to control wether first wave needs to be spawned or not
+    pub first_wave_spawned: bool,
 }
 
 pub fn load_enemy_sprites(
@@ -51,6 +51,44 @@ pub fn load_enemy_sprites(
     let mut animations: Vec<EnemyAnimation> = Vec::new();
 
     let enemy_list = vec![
+        (
+            "enemies/ohai.png",
+            UVec2::splat(32),
+            4,
+            4,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 4,
+                    last: 7,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 40,
+                    last: 43,
+                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
+        (
+            "enemies/micuwa.png",
+            UVec2::splat(32),
+            4,
+            4,
+            EnemyAnimation {
+                walk: AnimateSprite {
+                    first: 4,
+                    last: 7,
+                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                },
+                death: AnimateSprite {
+                    first: 40,
+                    last: 43,
+                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
+                },
+                state: EnemyAnimationState::Walk,
+            },
+        ),
         (
             "enemies/orcs.png",
             UVec2::splat(48),
@@ -148,21 +186,6 @@ pub fn load_enemy_sprites(
         time_between_spawns: Timer::from_seconds(TIME_BETWEEN_SPAWNS, TimerMode::Repeating),
         spawned_count_in_wave: 0,
         time_between_waves: Timer::from_seconds(TIME_BETWEEN_WAVES, TimerMode::Once),
+        first_wave_spawned: false
     });
-}
-
-pub fn control_first_wave(
-    time: Res<Time>,
-    mut wave_control: ResMut<WaveControl>,
-    mut game_state: ResMut<NextState<GameState>>,
-) {
-    if wave_control.wave_count == 0 {
-        wave_control.time_between_waves.tick(time.delta());
-        if wave_control.time_between_waves.just_finished() {
-            game_state.set(GameState::Attacking);
-            wave_control.time_between_waves.pause();
-            wave_control.time_between_waves.reset();
-            info!("fist wave controlled");
-        }
-    }
 }
