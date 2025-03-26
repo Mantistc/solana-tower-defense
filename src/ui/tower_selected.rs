@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::tower_building::SelectedTowerType;
+use crate::{enemies::WaveControl, tower_building::SelectedTowerType};
 
 use super::*;
 
@@ -8,6 +8,7 @@ use super::*;
 pub enum SelectedTowerTextTypes {
     TowerSelected,
     TowerCost,
+    TimeToBuild,
 }
 
 // display a text to indicate the selected tower to buy/build
@@ -22,7 +23,7 @@ pub fn spawn_tower_selected_text(mut commands: Commands) {
                 flex_direction: FlexDirection::Column,
                 padding: UiRect::all(Val::Px(10.0)),
                 position_type: PositionType::Absolute,
-                left: Val::Percent(38.5),
+                left: Val::Percent(40.5),
                 border: UiRect::all(Val::Px(5.0)),
                 top: Val::Percent(5.0),
                 ..default()
@@ -34,41 +35,60 @@ pub fn spawn_tower_selected_text(mut commands: Commands) {
         ))
         .id();
 
-    let _selected_tower_text = commands.entity(root_ui).with_children(|p| {
-        p.spawn((
-            Text::new("Selected Tower to buy: Lich"),
-            TextFont {
-                font_size: 18.0,
-                ..default()
-            },
-            TextColor(BORDER_AND_TEXT_UI_COLOR),
-            SelectedTowerTextTypes::TowerSelected,
-        ));
-    });
-
-    let _padding = commands.entity(root_ui).with_children(|p| {
-        p.spawn(Node {
-            height: Val::Px(20.0),
-            ..default()
+    let create_text = |commands: &mut Commands,
+                       text: &str,
+                       font_size: f32,
+                       bottom_padding: f32,
+                       text_type: SelectedTowerTextTypes| {
+        commands.entity(root_ui).with_children(|p| {
+            p.spawn((
+                Text::new(text),
+                TextFont {
+                    font_size,
+                    ..default()
+                },
+                TextColor(BORDER_AND_TEXT_UI_COLOR),
+                text_type,
+            ));
         });
-    });
 
-    let _selected_tower_cost = commands.entity(root_ui).with_children(|p| {
-        p.spawn((
-            Text::new("Cost: 0.0 Gold"),
-            TextFont {
-                font_size: 18.0,
+        commands.entity(root_ui).with_children(|p| {
+            p.spawn(Node {
+                height: Val::Px(bottom_padding),
                 ..default()
-            },
-            TextColor(BORDER_AND_TEXT_UI_COLOR),
-            SelectedTowerTextTypes::TowerCost,
-        ));
-    });
+            });
+        });
+    };
+
+    let _selected_tower_text = create_text(
+        &mut commands,
+        "Selected Tower to buy: Lich",
+        15.0,
+        20.0,
+        SelectedTowerTextTypes::TowerSelected,
+    );
+
+    let _selected_tower_cost = create_text(
+        &mut commands,
+        "Cost: 0.0 Gold",
+        15.0,
+        20.0,
+        SelectedTowerTextTypes::TowerCost,
+    );
+
+    let _time_to_build = create_text(
+        &mut commands,
+        "Time to build: 15.0 secs",
+        15.0,
+        20.0,
+        SelectedTowerTextTypes::TimeToBuild,
+    );
 }
 
 pub fn update_tower_selected_text(
     mut texts: Query<(&mut Text, &SelectedTowerTextTypes)>,
     selected_tower_type: Res<SelectedTowerType>,
+    wave_control: Res<WaveControl>,
 ) {
     for (mut text, text_type) in &mut texts {
         match text_type {
@@ -77,6 +97,14 @@ pub fn update_tower_selected_text(
             }
             SelectedTowerTextTypes::TowerCost => {
                 text.0 = format!("Cost: {:.1} Gold", selected_tower_type.to_cost(1));
+            }
+            SelectedTowerTextTypes::TimeToBuild => {
+                if !wave_control.time_between_waves.paused() {
+                    text.0 = format!(
+                        "Time to Build: {:.1} secs",
+                        wave_control.time_between_waves.remaining_secs()
+                    );
+                }
             }
         }
     }
