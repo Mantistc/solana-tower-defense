@@ -66,21 +66,21 @@ pub fn spawn_how_to_play_ui(mut commands: Commands) {
 
     let _explaining = create_text(
         &mut commands,
-        "L - Lich Tower: Cheap and reliable.",
+        "Key Q - Lich Tower: Cheap and reliable.",
         15.0,
         10.0,
     );
 
     let _explaining = create_text(
         &mut commands,
-        "Z - Zigurat Tower: Hits fast, keeps up the pressure.",
+        "Key W - Zigurat Tower: Hits fast, keeps up the pressure.",
         15.0,
         10.0,
     );
 
     let _explaining = create_text(
         &mut commands,
-        "N - Necro Tower: Slow but deals heavy damage.",
+        "Key E - Necro Tower: Slow but deals heavy damage.",
         15.0,
         35.0,
     );
