@@ -176,13 +176,13 @@ pub fn select_tower_type(
     mut selected_tower_type: ResMut<SelectedTowerType>,
     input: Res<ButtonInput<KeyCode>>,
 ) {
-    if input.just_pressed(KeyCode::KeyZ) {
+    if input.just_pressed(KeyCode::KeyW) {
         selected_tower_type.0 = TowerType::Zigurat;
     }
-    if input.just_pressed(KeyCode::KeyN) {
+    if input.just_pressed(KeyCode::KeyE) {
         selected_tower_type.0 = TowerType::Necro;
     }
-    if input.just_pressed(KeyCode::KeyL) {
+    if input.just_pressed(KeyCode::KeyQ) {
         selected_tower_type.0 = TowerType::Lich;
     }
 }
