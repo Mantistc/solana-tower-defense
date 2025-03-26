@@ -1,4 +1,4 @@
-use bevy::{color::palettes::css::WHITE, prelude::*};
+use bevy::prelude::*;
 
 use crate::tower_building::SelectedTowerType;
 
@@ -33,6 +33,7 @@ pub fn spawn_tower_selected_text(mut commands: Commands) {
             BackgroundColor(BACKGROUND_COLOR),
         ))
         .id();
+
     let _selected_tower_text = commands.entity(root_ui).with_children(|p| {
         p.spawn((
             Text::new("Selected Tower to buy: Lich"),
@@ -59,7 +60,7 @@ pub fn spawn_tower_selected_text(mut commands: Commands) {
                 font_size: 18.0,
                 ..default()
             },
-            TextColor(WHITE.into()),
+            TextColor(BORDER_AND_TEXT_UI_COLOR),
             SelectedTowerTextTypes::TowerCost,
         ));
     });

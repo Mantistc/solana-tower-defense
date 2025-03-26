@@ -179,7 +179,7 @@ pub fn select_tower_type(
     if input.just_pressed(KeyCode::KeyZ) {
         selected_tower_type.0 = TowerType::Zigurat;
     }
-    if input.just_pressed(KeyCode::KeyE) {
+    if input.just_pressed(KeyCode::KeyN) {
         selected_tower_type.0 = TowerType::Necro;
     }
     if input.just_pressed(KeyCode::KeyL) {
