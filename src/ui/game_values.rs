@@ -26,16 +26,33 @@ impl Plugin for UiPlugin {
         app.add_systems(Startup, spawn_sign_message_to_start)
             .add_systems(OnExit(GameState::Start), spawn_how_to_play_ui)
             .add_systems(OnExit(GameState::HowToPlay), spawn_game_ui)
-            .add_systems(Update, (handle_btn_interaction, update_ui_texts));
+            .add_systems(Update, (handle_btn_interaction, update_ui_texts))
+            .add_systems(OnEnter(GameState::Building), spawn_tower_selected_text)
+            .add_systems(OnExit(GameState::Building), despawn_selected_tower_ui)
+            .add_systems(
+                Update,
+                update_tower_selected_text.run_if(in_state(GameState::Building)),
+            );
     }
 }
+
+pub const MAX_COLOR_VALUE: f32 = 255.0;
+pub const BORDER_AND_TEXT_UI_COLOR: Color = Color::srgb(
+    224.0 / MAX_COLOR_VALUE,
+    162.0 / MAX_COLOR_VALUE,
+    125.0 / MAX_COLOR_VALUE,
+);
+pub const BACKGROUND_COLOR: Color = Color::srgb(
+    78.0 / MAX_COLOR_VALUE,
+    43.0 / MAX_COLOR_VALUE,
+    47.0 / MAX_COLOR_VALUE,
+);
 
 // This part is the stats/values the player have after start the game
 pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
     // think of this root_ui like a div in html that wraps all the other divs xd
     // it defines where the ui will be positioned, and from there, you spawn
     // the rest of the components as children. Pretty much like how you'd do it in html
-    let border_and_text_color = Color::srgb(224.0 / 255.0, 162.0 / 255.0, 125.0 / 255.0);
     let root_ui = commands
         .spawn((
             Node {
@@ -51,10 +68,10 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
                 top: Val::Percent(60.0),
                 ..default()
             },
-            BorderColor(border_and_text_color),
+            BorderColor(BORDER_AND_TEXT_UI_COLOR),
             BorderRadius::all(Val::Px(15.0)),
             Name::new("UI Root"),
-            BackgroundColor(Color::srgb(78.0 / 255.0, 43.0 / 255.0, 47.0 / 255.0)),
+            BackgroundColor(BACKGROUND_COLOR),
         ))
         .id();
 
@@ -68,7 +85,7 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
                         ..default()
                     },
                     TextLayout::new_with_justify(JustifyText::Center),
-                    TextColor(border_and_text_color),
+                    TextColor(BORDER_AND_TEXT_UI_COLOR),
                     text_type,
                 ));
             });
@@ -123,7 +140,7 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
 // Update in real-time the UI texts with the resources states
 pub fn update_ui_texts(
     mut texts: Query<(&mut Text, &TextType)>,
-    resources: (Res<Gold>, Res<Lifes>, Res<Wallet>, ResMut<WaveControl>),
+    resources: (Res<Gold>, Res<Lifes>, Res<Wallet>, Res<WaveControl>),
 ) {
     let (gold, lifes, wallet, wave_control) = resources;
     for (mut text, text_type) in &mut texts {
