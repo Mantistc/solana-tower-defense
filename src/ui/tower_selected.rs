@@ -99,12 +99,10 @@ pub fn update_tower_selected_text(
                 text.0 = format!("Cost: {:.1} Gold", selected_tower_type.to_cost(1));
             }
             SelectedTowerTextTypes::TimeToBuild => {
-                if !wave_control.time_between_waves.paused() {
-                    text.0 = format!(
-                        "Time to Build: {:.1} secs",
-                        wave_control.time_between_waves.remaining_secs()
-                    );
-                }
+                text.0 = format!(
+                    "Time to Build: {:.1} secs",
+                    wave_control.time_between_waves.remaining_secs()
+                );
             }
         }
     }
