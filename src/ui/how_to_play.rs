@@ -87,14 +87,14 @@ pub fn spawn_how_to_play_ui(mut commands: Commands) {
 
     let _explaining = create_text(
         &mut commands,
-        "Green highlight means you can build, red means you don’t have enough gold.",
+        "Green highlight means you can build, red means you don't have enough gold.",
         15.0,
         25.0,
     );
 
     let _explaining = create_text(
         &mut commands,
-        "You’ve got 15 seconds between waves to build and upgrade your defenses.",
+        "You've got 15 seconds between waves to build and upgrade your defenses.",
         15.0,
         10.0,
     );
