@@ -17,7 +17,6 @@ pub enum TextType {
     WaveCountText,
     LifesText,
     WalletBalanceText,
-    TimeToBuildText,
     WalletAddressText,
 }
 
@@ -108,13 +107,6 @@ pub fn spawn_game_ui(mut commands: Commands, wallet: Res<Wallet>) {
 
     let _lifes_text = create_text(&mut commands, "Lifes: 30", TextType::LifesText, 10.0);
 
-    let _lifes_text = create_text(
-        &mut commands,
-        "Time to build: 15.0 secs",
-        TextType::TimeToBuildText,
-        20.0,
-    );
-
     let _sol_balance_text = create_text(
         &mut commands,
         "Sol Balance: 0.0",
@@ -155,14 +147,6 @@ pub fn update_ui_texts(
                     "Sol Balance: {:.2}",
                     wallet.balance as f32 / LAMPORTS_PER_SOL as f32
                 )
-            }
-            TextType::TimeToBuildText => {
-                if !wave_control.time_between_waves.paused() {
-                    text.0 = format!(
-                        "Time to Build: {:.1} secs",
-                        wave_control.time_between_waves.remaining_secs()
-                    );
-                }
             }
             TextType::WalletAddressText => {
                 // here we can add logic to update the text wallet address if the wallet change in any time
