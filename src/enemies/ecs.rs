@@ -33,6 +33,10 @@ impl Plugin for EnemiesPlugin {
                 wave_control
                     .after(spawn_wave)
                     .run_if(in_state(GameState::Building).or(in_state(GameState::Attacking))),
+            )
+            .add_systems(
+                OnEnter(GameState::GameOver),
+                despawn_all_enemies_in_game_over,
             );
     }
 }
@@ -166,16 +170,28 @@ pub fn game_over(
     mut enemies: Query<(&Transform, Entity), With<Enemy>>,
     mut lifes: ResMut<Lifes>,
     mut game_state: ResMut<NextState<GameState>>,
+    mut wave_control: ResMut<WaveControl>,
 ) {
     for (enemy_transform, entity) in &mut enemies {
         let translation = enemy_transform.translation;
         if lifes.0 == 0 {
+            wave_control.wave_count = 0;
+            wave_control.spawned_count_in_wave = 0;
             game_state.set(GameState::GameOver);
         }
         if translation.y <= BREAK_POINTS[5].y {
             commands.entity(entity).despawn();
             lifes.0 = lifes.0.saturating_sub(1);
         }
+    }
+}
+
+pub fn despawn_all_enemies_in_game_over(
+    mut enemies: Query<Entity, With<Enemy>>,
+    mut commands: Commands,
+) {
+    for entity in &mut enemies {
+        commands.entity(entity).despawn();
     }
 }
 

@@ -163,10 +163,9 @@ pub fn handle_btn_interaction(
             Interaction::Pressed => {
                 let mut entity_to_despawn = None;
 
-                if let Some((entity, _)) = entities
-                    .iter()
-                    .find(|(_, name)| name.as_str() == "how to play ui")
-                {
+                if let Some((entity, _)) = entities.iter().find(|(_, name)| {
+                    name.as_str() == "how to play ui" || name.as_str() == "game over"
+                }) {
                     game_state.set(GameState::Building);
                     entity_to_despawn = Some(entity);
                 }
