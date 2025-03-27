@@ -4,7 +4,7 @@
 //! This file handles that, so if you want enemies to attack faster, deal more damage, or take more hits,
 //! this is where you make the changes.
 
-use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
+use super::{AnimateSprite, EnemyAnimation};
 use bevy::prelude::*;
 
 pub const MAX_ENEMIES_PER_WAVE: u8 = 25;
@@ -42,7 +42,7 @@ pub struct WaveControl {
     pub first_wave_spawned: bool,
 }
 
-fn ideal_time_per_frame() -> Timer {
+pub fn ideal_time_per_frame() -> Timer {
     Timer::from_seconds(0.1, TimerMode::Repeating)
 }
 
@@ -50,26 +50,26 @@ fn ideal_animation_values() -> EnemyAnimation {
     // this is the ideal values of the enemy sprite sheet that all enemy should have
     let standard_enemy_animation = EnemyAnimation {
         walk_up: AnimateSprite {
-            first: 4,
-            last: 7,
-            timer: ideal_time_per_frame(),
+            first: 0,
+            last: 3,
+            ..default()
         },
         walk_right: AnimateSprite {
             first: 4,
             last: 7,
-            timer: ideal_time_per_frame(),
+            ..default()
         },
         walk_left: AnimateSprite {
-            first: 4,
-            last: 7,
-            timer: ideal_time_per_frame(),
+            first: 8,
+            last: 11,
+            ..default()
         },
         walk_down: AnimateSprite {
-            first: 4,
-            last: 7,
-            timer: ideal_time_per_frame(),
+            first: 12,
+            last: 15,
+            ..default()
         },
-        state: EnemyAnimationState::WalkLeft,
+        ..default()
     };
     standard_enemy_animation
 }
@@ -86,35 +86,6 @@ pub fn load_enemy_sprites(
     let rows = 4;
     let enemy_list = vec![
         (
-            "enemies/orcs.png",
-            UVec2::splat(48),
-            8,
-            6,
-            EnemyAnimation {
-                walk_up: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    timer: ideal_time_per_frame(),
-                },
-                walk_left: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    timer: ideal_time_per_frame(),
-                },
-                walk_down: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    timer: ideal_time_per_frame(),
-                },
-                walk_right: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    timer: ideal_time_per_frame(),
-                },
-                state: EnemyAnimationState::WalkLeft,
-            },
-        ),
-        (
             "enemies/ohai.png",
             UVec2::splat(32),
             columns,
@@ -128,92 +99,92 @@ pub fn load_enemy_sprites(
             rows,
             ideal_animation_values(),
         ),
-
         (
-            "enemies/soldier.png",
-            UVec2::new(43, 31),
-            7,
-            6,
+            "enemies/orcs.png",
+            UVec2::splat(48),
+            8,
+            1,
             EnemyAnimation {
-                state: EnemyAnimationState::WalkLeft,
-                walk_up: AnimateSprite {
-                    first: 0,
-                    last: 6,
-                    timer: ideal_time_per_frame(),
-                },
-                walk_down: AnimateSprite {
-                    first: 0,
-                    last: 6,
-                    timer: ideal_time_per_frame(),
-                },
                 walk_left: AnimateSprite {
                     first: 0,
-                    last: 6,
-                    timer: ideal_time_per_frame(),
+                    last: 7,
+                    ..default()
                 },
-                walk_right: AnimateSprite {
+                ..default()
+            },
+        ),
+        (
+            "enemies/soldier.png",
+            UVec2::splat(48),
+            8,
+            1,
+            EnemyAnimation {
+                walk_left: AnimateSprite {
                     first: 0,
-                    last: 6,
-                    timer: ideal_time_per_frame(),
+                    last: 7,
+                    ..default()
                 },
+                ..default()
             },
         ),
         (
             "enemies/Leafbug.png",
             UVec2::new(64, 64),
-            8,
-            9,
+            24,
+            1,
             EnemyAnimation {
-                state: EnemyAnimationState::WalkLeft,
                 walk_up: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: ideal_time_per_frame(),
+                    first: 8,
+                    last: 15,
+                    ..default()
                 },
                 walk_down: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: ideal_time_per_frame(),
+                    first: 0,
+                    last: 7,
+                    ..default()
                 },
                 walk_left: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: ideal_time_per_frame(),
+                    first: 16,
+                    last: 23,
+                    ..default()
                 },
                 walk_right: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: ideal_time_per_frame(),
+                    first: 16,
+                    last: 23,
+                    ..default()
                 },
+                need_flip: true,
+                ..default()
             },
         ),
         (
             "enemies/Firebug.png",
             UVec2::new(128, 64),
-            11,
-            9,
+            24,
+            1,
             EnemyAnimation {
-                state: EnemyAnimationState::WalkLeft,
                 walk_up: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: ideal_time_per_frame(),
+                    first: 8,
+                    last: 15,
+                    ..default()
                 },
                 walk_down: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: ideal_time_per_frame(),
+                    first: 0,
+                    last: 7,
+                    ..default()
                 },
                 walk_left: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: ideal_time_per_frame(),
+                    first: 16,
+                    last: 23,
+                    ..default()
                 },
                 walk_right: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: ideal_time_per_frame(),
+                    first: 16,
+                    last: 23,
+                    ..default()
                 },
+                need_flip: true,
+                ..default()
             },
         ),
     ];

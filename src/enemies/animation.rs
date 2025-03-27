@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use super::ideal_time_per_frame;
+
 #[derive(Clone, Debug)]
 pub struct AnimateSprite {
     pub first: usize,
@@ -12,7 +14,7 @@ impl Default for AnimateSprite {
         Self {
             first: 0,
             last: 0,
-            timer: Default::default(),
+            timer: ideal_time_per_frame(),
         }
     }
 }
@@ -24,6 +26,7 @@ pub struct EnemyAnimation {
     pub walk_left: AnimateSprite,
     pub walk_right: AnimateSprite,
     pub state: EnemyAnimationState,
+    pub need_flip: bool
 }
 
 impl Default for EnemyAnimation {
@@ -34,6 +37,7 @@ impl Default for EnemyAnimation {
             walk_left: Default::default(),
             walk_right: Default::default(),
             state: EnemyAnimationState::WalkLeft,
+            need_flip: false
         }
     }
 }
