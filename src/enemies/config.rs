@@ -13,7 +13,7 @@ pub const SPAWN_X_LOCATION: f32 = 610.0;
 pub const TIME_BETWEEN_WAVES: f32 = 15.0;
 pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
 pub const INITIAL_ENEMY_LIFE: u16 = 60;
-pub const SCALAR: f32 = 0.6;
+pub const SCALAR: f32 = 0.75;
 pub const SCALE: f32 = 2.0;
 
 /// Controls enemy waves, including spawn timing, textures, animations, and wave progression.
@@ -159,7 +159,7 @@ pub fn load_enemy_sprites(
         ),
         (
             "enemies/fire-bug.png",
-            UVec2::new(128, 64),
+            UVec2::new(96, 64),
             24,
             1,
             EnemyAnimation {
