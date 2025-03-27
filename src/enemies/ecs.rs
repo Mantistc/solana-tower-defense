@@ -68,12 +68,12 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
                 wave_image.0.clone(),
                 TextureAtlas {
                     layout: wave_image.1.clone(),
-                    index: enemy_animation.walk.first,
+                    index: enemy_animation.walk_left.first,
                 },
             ),
             Transform {
                 translation: Vec3::new(SPAWN_X_LOCATION, SPAWN_Y_LOCATION, 1.0),
-                scale: Vec3::new(-SCALE, SCALE, 0.0),
+                scale: Vec3::splat(SCALE),
                 ..default()
             },
             Enemy {
