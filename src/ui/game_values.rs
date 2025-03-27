@@ -25,6 +25,7 @@ impl Plugin for UiPlugin {
         app.add_systems(Startup, spawn_sign_message_to_start)
             .add_systems(OnExit(GameState::Start), spawn_how_to_play_ui)
             .add_systems(OnExit(GameState::HowToPlay), spawn_game_ui)
+            .add_systems(OnEnter(GameState::GameOver), spawn_game_over_ui)
             .add_systems(OnEnter(GameState::Building), spawn_tower_selected_text)
             .add_systems(OnExit(GameState::Building), despawn_selected_tower_ui)
             .add_systems(Update, (handle_btn_interaction, update_ui_texts))
