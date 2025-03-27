@@ -42,6 +42,38 @@ pub struct WaveControl {
     pub first_wave_spawned: bool,
 }
 
+fn ideal_time_per_frame() -> Timer {
+    Timer::from_seconds(0.1, TimerMode::Repeating)
+}
+
+fn ideal_animation_values() -> EnemyAnimation {
+    // this is the ideal values of the enemy sprite sheet that all enemy should have
+    let standard_enemy_animation = EnemyAnimation {
+        walk_up: AnimateSprite {
+            first: 4,
+            last: 7,
+            timer: ideal_time_per_frame(),
+        },
+        walk_right: AnimateSprite {
+            first: 4,
+            last: 7,
+            timer: ideal_time_per_frame(),
+        },
+        walk_left: AnimateSprite {
+            first: 4,
+            last: 7,
+            timer: ideal_time_per_frame(),
+        },
+        walk_down: AnimateSprite {
+            first: 4,
+            last: 7,
+            timer: ideal_time_per_frame(),
+        },
+        state: EnemyAnimationState::WalkLeft,
+    };
+    standard_enemy_animation
+}
+
 pub fn load_enemy_sprites(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
@@ -50,82 +82,80 @@ pub fn load_enemy_sprites(
     let mut textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)> = Vec::new();
     let mut animations: Vec<EnemyAnimation> = Vec::new();
 
+    let columns = 4;
+    let rows = 4;
     let enemy_list = vec![
-        (
-            "enemies/ohai.png",
-            UVec2::splat(32),
-            4,
-            4,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 4,
-                    last: 7,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            "enemies/micuwa.png",
-            UVec2::splat(32),
-            4,
-            4,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 4,
-                    last: 7,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
-        ),
         (
             "enemies/orcs.png",
             UVec2::splat(48),
             8,
             6,
             EnemyAnimation {
-                walk: AnimateSprite {
+                walk_up: AnimateSprite {
                     first: 8,
                     last: 15,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                    timer: ideal_time_per_frame(),
                 },
-                death: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
+                walk_left: AnimateSprite {
+                    first: 8,
+                    last: 15,
+                    timer: ideal_time_per_frame(),
                 },
-                state: EnemyAnimationState::Walk,
+                walk_down: AnimateSprite {
+                    first: 8,
+                    last: 15,
+                    timer: ideal_time_per_frame(),
+                },
+                walk_right: AnimateSprite {
+                    first: 8,
+                    last: 15,
+                    timer: ideal_time_per_frame(),
+                },
+                state: EnemyAnimationState::WalkLeft,
             },
         ),
+        (
+            "enemies/ohai.png",
+            UVec2::splat(32),
+            columns,
+            rows,
+            ideal_animation_values(),
+        ),
+        (
+            "enemies/micuwa.png",
+            UVec2::splat(32),
+            columns,
+            rows,
+            ideal_animation_values(),
+        ),
+
         (
             "enemies/soldier.png",
             UVec2::new(43, 31),
             7,
             6,
             EnemyAnimation {
-                walk: AnimateSprite {
+                state: EnemyAnimationState::WalkLeft,
+                walk_up: AnimateSprite {
                     first: 0,
                     last: 6,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                    timer: ideal_time_per_frame(),
                 },
-                death: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
+                walk_down: AnimateSprite {
+                    first: 0,
+                    last: 6,
+                    timer: ideal_time_per_frame(),
                 },
-
-                state: EnemyAnimationState::Walk,
+                walk_left: AnimateSprite {
+                    first: 0,
+                    last: 6,
+                    timer: ideal_time_per_frame(),
+                },
+                walk_right: AnimateSprite {
+                    first: 0,
+                    last: 6,
+                    timer: ideal_time_per_frame(),
+                },
             },
         ),
         (
@@ -134,18 +164,27 @@ pub fn load_enemy_sprites(
             8,
             9,
             EnemyAnimation {
-                walk: AnimateSprite {
+                state: EnemyAnimationState::WalkLeft,
+                walk_up: AnimateSprite {
                     first: 40,
                     last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                    timer: ideal_time_per_frame(),
                 },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                walk_down: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: ideal_time_per_frame(),
                 },
-
-                state: EnemyAnimationState::Walk,
+                walk_left: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: ideal_time_per_frame(),
+                },
+                walk_right: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: ideal_time_per_frame(),
+                },
             },
         ),
         (
@@ -154,18 +193,27 @@ pub fn load_enemy_sprites(
             11,
             9,
             EnemyAnimation {
-                walk: AnimateSprite {
+                state: EnemyAnimationState::WalkLeft,
+                walk_up: AnimateSprite {
                     first: 55,
                     last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                    timer: ideal_time_per_frame(),
                 },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                walk_down: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: ideal_time_per_frame(),
                 },
-
-                state: EnemyAnimationState::Walk,
+                walk_left: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: ideal_time_per_frame(),
+                },
+                walk_right: AnimateSprite {
+                    first: 40,
+                    last: 47,
+                    timer: ideal_time_per_frame(),
+                },
             },
         ),
     ];
@@ -186,6 +234,6 @@ pub fn load_enemy_sprites(
         time_between_spawns: Timer::from_seconds(TIME_BETWEEN_SPAWNS, TimerMode::Repeating),
         spawned_count_in_wave: 0,
         time_between_waves: Timer::from_seconds(TIME_BETWEEN_WAVES, TimerMode::Once),
-        first_wave_spawned: false
+        first_wave_spawned: false,
     });
 }
