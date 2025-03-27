@@ -12,8 +12,8 @@ pub const SPAWN_Y_LOCATION: f32 = 80.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
 pub const TIME_BETWEEN_WAVES: f32 = 15.0;
 pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
-pub const INITIAL_ENEMY_LIFE: u16 = 6000;
-pub const SCALAR: f32 = 0.8;
+pub const INITIAL_ENEMY_LIFE: u16 = 60;
+pub const SCALAR: f32 = 0.6;
 pub const SCALE: f32 = 2.0;
 
 /// Controls enemy waves, including spawn timing, textures, animations, and wave progression.
@@ -109,7 +109,7 @@ pub fn load_enemy_sprites(
             EnemyAnimation::make_all(0, 7, ideal_time_per_frame()),
         ),
         (
-            "enemies/Leafbug.png",
+            "enemies/leaf-bug.png",
             UVec2::splat(64),
             24,
             1,
@@ -134,7 +134,31 @@ pub fn load_enemy_sprites(
             },
         ),
         (
-            "enemies/Firebug.png",
+            "enemies/magma-crab.png",
+            UVec2::splat(64),
+            24,
+            1,
+            EnemyAnimation {
+                walk_up: AnimateSprite {
+                    first: 8,
+                    last: 15,
+                    ..default()
+                },
+                walk_down: AnimateSprite {
+                    first: 0,
+                    last: 7,
+                    ..default()
+                },
+                walk_left: AnimateSprite {
+                    first: 16,
+                    last: 23,
+                    ..default()
+                },
+                ..default()
+            },
+        ),
+        (
+            "enemies/fire-bug.png",
             UVec2::new(128, 64),
             24,
             1,

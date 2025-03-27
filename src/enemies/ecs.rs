@@ -92,8 +92,8 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
 /// Defines a set of predefined points in the game world where enemies change direction.
 /// These points dictate the movement path of the enemies.
 pub const BREAK_POINTS: [Vec2; 6] = [
-    Vec2::new(250.0, SPAWN_Y_LOCATION),
-    Vec2::new(250.0, -205.0),
+    Vec2::new(260.0, SPAWN_Y_LOCATION),
+    Vec2::new(260.0, -205.0),
     Vec2::new(-230.0, -205.0),
     Vec2::new(-230.0, SPAWN_Y_LOCATION),
     Vec2::new(-455.0, SPAWN_Y_LOCATION),
