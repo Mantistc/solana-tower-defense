@@ -12,7 +12,7 @@ pub const SPAWN_Y_LOCATION: f32 = 80.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
 pub const TIME_BETWEEN_WAVES: f32 = 15.0;
 pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
-pub const INITIAL_ENEMY_LIFE: u16 = 60;
+pub const INITIAL_ENEMY_LIFE: u16 = 6000;
 pub const SCALAR: f32 = 0.8;
 pub const SCALE: f32 = 2.0;
 
@@ -52,11 +52,6 @@ fn ideal_animation_values() -> EnemyAnimation {
         walk_up: AnimateSprite {
             first: 0,
             last: 3,
-            ..default()
-        },
-        walk_right: AnimateSprite {
-            first: 4,
-            last: 7,
             ..default()
         },
         walk_left: AnimateSprite {
@@ -100,36 +95,22 @@ pub fn load_enemy_sprites(
             ideal_animation_values(),
         ),
         (
-            "enemies/orcs.png",
-            UVec2::splat(48),
+            "enemies/soldier.png",
+            UVec2::splat(32),
             8,
             1,
-            EnemyAnimation {
-                walk_left: AnimateSprite {
-                    first: 0,
-                    last: 7,
-                    ..default()
-                },
-                ..default()
-            },
+            EnemyAnimation::make_all(0, 7, ideal_time_per_frame()),
         ),
         (
-            "enemies/soldier.png",
-            UVec2::splat(48),
+            "enemies/orcs.png",
+            UVec2::splat(32),
             8,
             1,
-            EnemyAnimation {
-                walk_left: AnimateSprite {
-                    first: 0,
-                    last: 7,
-                    ..default()
-                },
-                ..default()
-            },
+            EnemyAnimation::make_all(0, 7, ideal_time_per_frame()),
         ),
         (
             "enemies/Leafbug.png",
-            UVec2::new(64, 64),
+            UVec2::splat(64),
             24,
             1,
             EnemyAnimation {
@@ -144,11 +125,6 @@ pub fn load_enemy_sprites(
                     ..default()
                 },
                 walk_left: AnimateSprite {
-                    first: 16,
-                    last: 23,
-                    ..default()
-                },
-                walk_right: AnimateSprite {
                     first: 16,
                     last: 23,
                     ..default()
@@ -174,11 +150,6 @@ pub fn load_enemy_sprites(
                     ..default()
                 },
                 walk_left: AnimateSprite {
-                    first: 16,
-                    last: 23,
-                    ..default()
-                },
-                walk_right: AnimateSprite {
                     first: 16,
                     last: 23,
                     ..default()
