@@ -24,9 +24,8 @@ pub struct EnemyAnimation {
     pub walk_up: AnimateSprite,
     pub walk_down: AnimateSprite,
     pub walk_left: AnimateSprite,
-    pub walk_right: AnimateSprite,
     pub state: EnemyAnimationState,
-    pub need_flip: bool
+    pub need_flip: bool,
 }
 
 impl Default for EnemyAnimation {
@@ -35,9 +34,24 @@ impl Default for EnemyAnimation {
             walk_up: Default::default(),
             walk_down: Default::default(),
             walk_left: Default::default(),
-            walk_right: Default::default(),
             state: EnemyAnimationState::WalkLeft,
-            need_flip: false
+            need_flip: false,
+        }
+    }
+}
+
+impl EnemyAnimation {
+    pub fn make_all(first: usize, last: usize, timer: Timer) -> Self {
+        let animate_sprite = || AnimateSprite {
+            first,
+            last,
+            timer: timer.clone(),
+        };
+        Self {
+            walk_up: animate_sprite(),
+            walk_down: animate_sprite(),
+            walk_left: animate_sprite(),
+            ..default()
         }
     }
 }
@@ -47,7 +61,6 @@ pub enum EnemyAnimationState {
     WalkUp,
     WalkDown,
     WalkLeft,
-    WalkRight,
 }
 
 pub fn animate(
@@ -58,8 +71,7 @@ pub fn animate(
         let animation = match enemy_animation.state {
             EnemyAnimationState::WalkUp => &mut enemy_animation.walk_up,
             EnemyAnimationState::WalkDown => &mut enemy_animation.walk_down,
-            EnemyAnimationState::WalkLeft => &mut enemy_animation.walk_right,
-            EnemyAnimationState::WalkRight => &mut enemy_animation.walk_left,
+            EnemyAnimationState::WalkLeft => &mut enemy_animation.walk_left,
         };
 
         animation.timer.tick(time.delta());

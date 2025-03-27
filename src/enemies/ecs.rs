@@ -14,8 +14,8 @@ use bevy::prelude::*;
 use crate::tower_building::{GameState, Lifes};
 
 use super::{
-    animate, load_enemy_sprites, WaveControl, INITIAL_ENEMY_LIFE, MAX_ENEMIES_PER_WAVE, SCALAR,
-    SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
+    animate, load_enemy_sprites, EnemyAnimation, EnemyAnimationState, WaveControl,
+    INITIAL_ENEMY_LIFE, MAX_ENEMIES_PER_WAVE, SCALAR, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
 
 pub struct EnemiesPlugin;
@@ -104,16 +104,24 @@ pub const BREAK_POINTS: [Vec2; 6] = [
 /// The movement is determined by comparing the enemy’s position to predefined breakpoints.
 /// Once an enemy reaches a specific breakpoint, it updates its direction accordingly.
 pub fn move_enemies(
-    mut enemies: Query<(&mut Transform, &Enemy, &mut BreakPointLvl)>,
+    mut enemies: Query<(
+        &mut Transform,
+        &Enemy,
+        &mut BreakPointLvl,
+        &mut EnemyAnimation,
+    )>,
     time: Res<Time>,
 ) {
-    for (mut enemy_transform, enemy, mut breal_point_lvl) in &mut enemies {
+    for (mut enemy_transform, enemy, mut breal_point_lvl, mut enemy_animation) in &mut enemies {
         let translation = enemy_transform.translation;
         let speed = enemy.speed * time.delta_secs();
 
         // 1. -x
         if translation.x > BREAK_POINTS[0].x {
             enemy_transform.translation.x -= speed;
+            if enemy_animation.need_flip {
+                enemy_transform.scale.x = -SCALE;
+            }
         }
         // 2. -y
         else if translation.x <= BREAK_POINTS[0].x
@@ -121,11 +129,13 @@ pub fn move_enemies(
             && translation.y > BREAK_POINTS[1].y
         {
             enemy_transform.translation.y -= speed;
+            enemy_animation.state = EnemyAnimationState::WalkDown;
             *breal_point_lvl = BreakPointLvl(1);
         }
         // 3. -x
         else if translation.y <= BREAK_POINTS[1].y && translation.x >= BREAK_POINTS[2].x {
             enemy_transform.translation.x -= speed;
+            enemy_animation.state = EnemyAnimationState::WalkLeft;
             *breal_point_lvl = BreakPointLvl(2);
         }
         // 4. +y
@@ -133,17 +143,20 @@ pub fn move_enemies(
             && translation.x <= BREAK_POINTS[2].x
             && translation.x > BREAK_POINTS[4].x
         {
+            enemy_animation.state = EnemyAnimationState::WalkUp;
             enemy_transform.translation.y += speed;
             *breal_point_lvl = BreakPointLvl(3);
         }
         // 5. -x
         else if translation.y >= SPAWN_Y_LOCATION && translation.x >= BREAK_POINTS[4].x {
             enemy_transform.translation.x -= speed;
+            enemy_animation.state = EnemyAnimationState::WalkLeft;
             *breal_point_lvl = BreakPointLvl(4);
         }
         // 6. -y
         else if translation.y > BREAK_POINTS[5].y && translation.x <= BREAK_POINTS[4].x {
             enemy_transform.translation.y -= speed;
+            enemy_animation.state = EnemyAnimationState::WalkDown;
             *breal_point_lvl = BreakPointLvl(5);
         }
     }
