@@ -25,13 +25,14 @@ impl Plugin for EnemiesPlugin {
         app.add_systems(Startup, load_enemy_sprites)
             .add_systems(
                 Update,
-                wave_control
-                    .run_if(in_state(GameState::Building).or(in_state(GameState::Attacking))),
+                (spawn_wave, animate, move_enemies, game_over)
+                    .run_if(in_state(GameState::Attacking)),
             )
             .add_systems(
                 Update,
-                (spawn_wave, animate, move_enemies, despawn_enemies)
-                    .run_if(in_state(GameState::Attacking)),
+                wave_control
+                    .after(spawn_wave)
+                    .run_if(in_state(GameState::Building).or(in_state(GameState::Attacking))),
             );
     }
 }
@@ -49,13 +50,12 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
     if wave_control.wave_count == wave_control.textures.len() as u8 {
         return;
     }
+
     wave_control.time_between_spawns.tick(time.delta());
 
-    if wave_control.time_between_spawns.just_finished()
-        && wave_control.spawned_count_in_wave < MAX_ENEMIES_PER_WAVE
+    if wave_control.spawned_count_in_wave < MAX_ENEMIES_PER_WAVE
+        && wave_control.time_between_spawns.just_finished()
     {
-        wave_control.time_between_waves.reset();
-        wave_control.time_between_waves.pause();
         let wave_image = &wave_control.textures[wave_control.wave_count as usize];
         let enemy_animation = &wave_control.animations[wave_control.wave_count as usize];
         let enemy_life = (INITIAL_ENEMY_LIFE as f32
@@ -63,6 +63,7 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
         .round() as u16;
         let enemy_speed = (75.0 * (1.05f32).powf(wave_control.wave_count as f32)).min(300.0);
         info!("enemy life: {}, enemy speed: {:?}", enemy_life, enemy_speed);
+
         commands.spawn((
             Sprite::from_atlas_image(
                 wave_image.0.clone(),
@@ -78,13 +79,11 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
             },
             Enemy {
                 life: enemy_life,
-
                 speed: enemy_speed,
             },
             enemy_animation.clone(),
             BreakPointLvl(0),
         ));
-
         wave_control.spawned_count_in_wave += 1;
     }
 }
@@ -162,7 +161,7 @@ pub fn move_enemies(
     }
 }
 
-pub fn despawn_enemies(
+pub fn game_over(
     mut commands: Commands,
     mut enemies: Query<(&Transform, Entity), With<Enemy>>,
     mut lifes: ResMut<Lifes>,
@@ -186,9 +185,6 @@ pub fn wave_control(
     enemies: Query<Entity, With<Enemy>>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
-    let all_enemies_killed = enemies.iter().len() == 0;
-    let wave_fully_spawned = wave_control.spawned_count_in_wave == MAX_ENEMIES_PER_WAVE;
-
     // tick cooldown timer
     wave_control.time_between_waves.tick(time.delta());
 
@@ -202,6 +198,10 @@ pub fn wave_control(
             wave_control.first_wave_spawned = true;
         }
     }
+
+    let all_enemies_killed = enemies.iter().next().is_none();
+    let wave_fully_spawned = wave_control.spawned_count_in_wave == MAX_ENEMIES_PER_WAVE;
+
     if wave_fully_spawned && all_enemies_killed {
         // control cooldown between waves
         if wave_control.time_between_waves.paused() {
@@ -213,6 +213,8 @@ pub fn wave_control(
         if wave_control.time_between_waves.just_finished() {
             wave_control.spawned_count_in_wave = 0;
             wave_control.wave_count += 1;
+            wave_control.time_between_waves.pause();
+            wave_control.time_between_waves.reset();
             game_state.set(GameState::Attacking);
             info!(
                 "cooldown finished, starting wave: {}",
