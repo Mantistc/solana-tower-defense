@@ -14,8 +14,8 @@ use bevy::prelude::*;
 use crate::tower_building::{GameState, Lifes};
 
 use super::{
-    animate, control_first_wave, load_enemy_sprites, WaveControl, INITIAL_ENEMY_LIFE,
-    MAX_ENEMIES_PER_WAVE, SCALAR, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
+    animate, load_enemy_sprites, EnemyAnimation, EnemyAnimationState, WaveControl,
+    INITIAL_ENEMY_LIFE, MAX_ENEMIES_PER_WAVE, SCALAR, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
 
 pub struct EnemiesPlugin;
@@ -23,10 +23,6 @@ pub struct EnemiesPlugin;
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, load_enemy_sprites)
-            .add_systems(
-                Update,
-                control_first_wave.run_if(in_state(GameState::Building)),
-            )
             .add_systems(
                 Update,
                 wave_control
@@ -72,12 +68,12 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
                 wave_image.0.clone(),
                 TextureAtlas {
                     layout: wave_image.1.clone(),
-                    index: enemy_animation.walk.first,
+                    index: enemy_animation.walk_left.first,
                 },
             ),
             Transform {
                 translation: Vec3::new(SPAWN_X_LOCATION, SPAWN_Y_LOCATION, 1.0),
-                scale: Vec3::new(-SCALE, SCALE, 0.0),
+                scale: Vec3::splat(SCALE),
                 ..default()
             },
             Enemy {
@@ -96,8 +92,8 @@ fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<
 /// Defines a set of predefined points in the game world where enemies change direction.
 /// These points dictate the movement path of the enemies.
 pub const BREAK_POINTS: [Vec2; 6] = [
-    Vec2::new(250.0, SPAWN_Y_LOCATION),
-    Vec2::new(250.0, -205.0),
+    Vec2::new(260.0, SPAWN_Y_LOCATION),
+    Vec2::new(260.0, -205.0),
     Vec2::new(-230.0, -205.0),
     Vec2::new(-230.0, SPAWN_Y_LOCATION),
     Vec2::new(-455.0, SPAWN_Y_LOCATION),
@@ -108,16 +104,24 @@ pub const BREAK_POINTS: [Vec2; 6] = [
 /// The movement is determined by comparing the enemy’s position to predefined breakpoints.
 /// Once an enemy reaches a specific breakpoint, it updates its direction accordingly.
 pub fn move_enemies(
-    mut enemies: Query<(&mut Transform, &Enemy, &mut BreakPointLvl)>,
+    mut enemies: Query<(
+        &mut Transform,
+        &Enemy,
+        &mut BreakPointLvl,
+        &mut EnemyAnimation,
+    )>,
     time: Res<Time>,
 ) {
-    for (mut enemy_transform, enemy, mut breal_point_lvl) in &mut enemies {
+    for (mut enemy_transform, enemy, mut breal_point_lvl, mut enemy_animation) in &mut enemies {
         let translation = enemy_transform.translation;
         let speed = enemy.speed * time.delta_secs();
 
         // 1. -x
         if translation.x > BREAK_POINTS[0].x {
             enemy_transform.translation.x -= speed;
+            if enemy_animation.need_flip {
+                enemy_transform.scale.x = -SCALE;
+            }
         }
         // 2. -y
         else if translation.x <= BREAK_POINTS[0].x
@@ -125,11 +129,13 @@ pub fn move_enemies(
             && translation.y > BREAK_POINTS[1].y
         {
             enemy_transform.translation.y -= speed;
+            enemy_animation.state = EnemyAnimationState::WalkDown;
             *breal_point_lvl = BreakPointLvl(1);
         }
         // 3. -x
         else if translation.y <= BREAK_POINTS[1].y && translation.x >= BREAK_POINTS[2].x {
             enemy_transform.translation.x -= speed;
+            enemy_animation.state = EnemyAnimationState::WalkLeft;
             *breal_point_lvl = BreakPointLvl(2);
         }
         // 4. +y
@@ -137,17 +143,20 @@ pub fn move_enemies(
             && translation.x <= BREAK_POINTS[2].x
             && translation.x > BREAK_POINTS[4].x
         {
+            enemy_animation.state = EnemyAnimationState::WalkUp;
             enemy_transform.translation.y += speed;
             *breal_point_lvl = BreakPointLvl(3);
         }
         // 5. -x
         else if translation.y >= SPAWN_Y_LOCATION && translation.x >= BREAK_POINTS[4].x {
             enemy_transform.translation.x -= speed;
+            enemy_animation.state = EnemyAnimationState::WalkLeft;
             *breal_point_lvl = BreakPointLvl(4);
         }
         // 6. -y
         else if translation.y > BREAK_POINTS[5].y && translation.x <= BREAK_POINTS[4].x {
             enemy_transform.translation.y -= speed;
+            enemy_animation.state = EnemyAnimationState::WalkDown;
             *breal_point_lvl = BreakPointLvl(5);
         }
     }
@@ -177,22 +186,36 @@ pub fn wave_control(
     enemies: Query<Entity, With<Enemy>>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
-    let current_wave_enemies: usize = enemies.iter().len();
+    let all_enemies_killed = enemies.iter().len() == 0;
+    let wave_fully_spawned = wave_control.spawned_count_in_wave == MAX_ENEMIES_PER_WAVE;
 
-    if wave_control.spawned_count_in_wave == MAX_ENEMIES_PER_WAVE && current_wave_enemies == 0 {
+    // tick cooldown timer
+    wave_control.time_between_waves.tick(time.delta());
+
+    if !wave_control.first_wave_spawned {
+        // start first wave after timer ends
+        if wave_control.time_between_waves.just_finished() {
+            game_state.set(GameState::Attacking);
+            wave_control.time_between_waves.pause();
+            wave_control.time_between_waves.reset();
+            info!("first wave started");
+            wave_control.first_wave_spawned = true;
+        }
+    }
+    if wave_fully_spawned && all_enemies_killed {
+        // control cooldown between waves
         if wave_control.time_between_waves.paused() {
             wave_control.time_between_waves.unpause();
             wave_control.time_between_waves.reset();
             game_state.set(GameState::Building);
         }
 
-        wave_control.time_between_waves.tick(time.delta());
         if wave_control.time_between_waves.just_finished() {
             wave_control.spawned_count_in_wave = 0;
             wave_control.wave_count += 1;
             game_state.set(GameState::Attacking);
             info!(
-                "cooldown finished, starting Wave: {:?}",
+                "cooldown finished, starting wave: {}",
                 wave_control.wave_count
             );
         }

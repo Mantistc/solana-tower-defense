@@ -4,19 +4,16 @@
 //! This file handles that, so if you want enemies to attack faster, deal more damage, or take more hits,
 //! this is where you make the changes.
 
+use super::{AnimateSprite, EnemyAnimation};
 use bevy::prelude::*;
 
-use crate::tower_building::GameState;
-
-use super::{AnimateSprite, EnemyAnimation, EnemyAnimationState};
-
 pub const MAX_ENEMIES_PER_WAVE: u8 = 25;
-pub const SPAWN_Y_LOCATION: f32 = 70.0;
+pub const SPAWN_Y_LOCATION: f32 = 80.0;
 pub const SPAWN_X_LOCATION: f32 = 610.0;
 pub const TIME_BETWEEN_WAVES: f32 = 15.0;
 pub const TIME_BETWEEN_SPAWNS: f32 = 1.5;
 pub const INITIAL_ENEMY_LIFE: u16 = 60;
-pub const SCALAR: f32 = 0.8;
+pub const SCALAR: f32 = 0.6;
 pub const SCALE: f32 = 2.0;
 
 /// Controls enemy waves, including spawn timing, textures, animations, and wave progression.
@@ -40,6 +37,36 @@ pub struct WaveControl {
 
     /// Timer controlling the interval between waves.
     pub time_between_waves: Timer,
+
+    /// Value to control wether first wave needs to be spawned or not
+    pub first_wave_spawned: bool,
+}
+
+pub fn ideal_time_per_frame() -> Timer {
+    Timer::from_seconds(0.1, TimerMode::Repeating)
+}
+
+fn ideal_animation_values() -> EnemyAnimation {
+    // this is the ideal values of the enemy sprite sheet that all enemy should have
+    let standard_enemy_animation = EnemyAnimation {
+        walk_up: AnimateSprite {
+            first: 0,
+            last: 3,
+            ..default()
+        },
+        walk_left: AnimateSprite {
+            first: 8,
+            last: 11,
+            ..default()
+        },
+        walk_down: AnimateSprite {
+            first: 12,
+            last: 15,
+            ..default()
+        },
+        ..default()
+    };
+    standard_enemy_animation
 }
 
 pub fn load_enemy_sprites(
@@ -50,84 +77,109 @@ pub fn load_enemy_sprites(
     let mut textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)> = Vec::new();
     let mut animations: Vec<EnemyAnimation> = Vec::new();
 
+    let columns = 4;
+    let rows = 4;
     let enemy_list = vec![
         (
-            "enemies/orcs.png",
-            UVec2::splat(48),
-            8,
-            6,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-                },
-                state: EnemyAnimationState::Walk,
-            },
+            "enemies/ohai.png",
+            UVec2::splat(32),
+            columns,
+            rows,
+            ideal_animation_values(),
+        ),
+        (
+            "enemies/micuwa.png",
+            UVec2::splat(32),
+            columns,
+            rows,
+            ideal_animation_values(),
         ),
         (
             "enemies/soldier.png",
-            UVec2::new(43, 31),
-            7,
-            6,
-            EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 0,
-                    last: 6,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
-                },
-                death: AnimateSprite {
-                    first: 40,
-                    last: 43,
-                    timer: Timer::from_seconds(0.25, TimerMode::Repeating),
-                },
-
-                state: EnemyAnimationState::Walk,
-            },
-        ),
-        (
-            "enemies/Leafbug.png",
-            UVec2::new(64, 64),
+            UVec2::splat(32),
             8,
-            9,
+            1,
+            EnemyAnimation::make_all(0, 7, ideal_time_per_frame()),
+        ),
+        (
+            "enemies/orcs.png",
+            UVec2::splat(32),
+            8,
+            1,
+            EnemyAnimation::make_all(0, 7, ideal_time_per_frame()),
+        ),
+        (
+            "enemies/leaf-bug.png",
+            UVec2::splat(64),
+            24,
+            1,
             EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 40,
-                    last: 47,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                walk_up: AnimateSprite {
+                    first: 8,
+                    last: 15,
+                    ..default()
                 },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                walk_down: AnimateSprite {
+                    first: 0,
+                    last: 7,
+                    ..default()
                 },
-
-                state: EnemyAnimationState::Walk,
+                walk_left: AnimateSprite {
+                    first: 16,
+                    last: 23,
+                    ..default()
+                },
+                need_flip: true,
+                ..default()
             },
         ),
         (
-            "enemies/Firebug.png",
-            UVec2::new(128, 64),
-            11,
-            9,
+            "enemies/magma-crab.png",
+            UVec2::splat(64),
+            24,
+            1,
             EnemyAnimation {
-                walk: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                walk_up: AnimateSprite {
+                    first: 8,
+                    last: 15,
+                    ..default()
                 },
-                death: AnimateSprite {
-                    first: 55,
-                    last: 62,
-                    timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+                walk_down: AnimateSprite {
+                    first: 0,
+                    last: 7,
+                    ..default()
                 },
-
-                state: EnemyAnimationState::Walk,
+                walk_left: AnimateSprite {
+                    first: 16,
+                    last: 23,
+                    ..default()
+                },
+                ..default()
+            },
+        ),
+        (
+            "enemies/fire-bug.png",
+            UVec2::new(128, 64),
+            24,
+            1,
+            EnemyAnimation {
+                walk_up: AnimateSprite {
+                    first: 8,
+                    last: 15,
+                    ..default()
+                },
+                walk_down: AnimateSprite {
+                    first: 0,
+                    last: 7,
+                    ..default()
+                },
+                walk_left: AnimateSprite {
+                    first: 16,
+                    last: 23,
+                    ..default()
+                },
+                need_flip: true,
+                ..default()
             },
         ),
     ];
@@ -148,21 +200,6 @@ pub fn load_enemy_sprites(
         time_between_spawns: Timer::from_seconds(TIME_BETWEEN_SPAWNS, TimerMode::Repeating),
         spawned_count_in_wave: 0,
         time_between_waves: Timer::from_seconds(TIME_BETWEEN_WAVES, TimerMode::Once),
+        first_wave_spawned: false,
     });
-}
-
-pub fn control_first_wave(
-    time: Res<Time>,
-    mut wave_control: ResMut<WaveControl>,
-    mut game_state: ResMut<NextState<GameState>>,
-) {
-    if wave_control.wave_count == 0 {
-        wave_control.time_between_waves.tick(time.delta());
-        if wave_control.time_between_waves.just_finished() {
-            game_state.set(GameState::Attacking);
-            wave_control.time_between_waves.pause();
-            wave_control.time_between_waves.reset();
-            info!("fist wave controlled");
-        }
-    }
 }
