@@ -6,7 +6,7 @@ use crate::{
     tilemap::TILE_SIZE,
 };
 
-use super::{Gold, SelectedTowerType, TowerControl, TowerType, TOWER_POSITION_PLACEMENT};
+use super::{Gold, Lifes, SelectedTowerType, TowerControl, TowerType, INITIAL_PLAYER_GOLD, MAX_LIFES, TOWER_POSITION_PLACEMENT};
 
 #[derive(Debug, Clone)]
 pub struct TowerInfo {
@@ -229,6 +229,21 @@ pub fn reset_hover_color_in_attacking(
     for mut placements in &mut placement_zones {
         placements.color = Color::srgba(0.0, 0.0, 0.0, 0.0);
     }
+}
+
+pub fn despawn_towers_and_reset_on_game_over(
+    mut towers: Query<Entity, With<Tower>>,
+    mut tower_control: ResMut<TowerControl>,
+    mut gold: ResMut<Gold>,
+    mut commands: Commands,
+    mut lifes: ResMut<Lifes>
+) {
+    for entity in &mut towers {
+        commands.entity(entity).despawn();
+    }
+    tower_control.placements = [0; 15];
+    gold.0 = INITIAL_PLAYER_GOLD;
+    lifes.0 = MAX_LIFES;
 }
 
 // TODO: set the attack points based on the specific layer of the tiled map provided

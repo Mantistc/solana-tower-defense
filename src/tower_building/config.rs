@@ -15,6 +15,10 @@ impl Plugin for TowersPlugin {
             .insert_resource(Lifes(MAX_LIFES))
             .insert_resource(SelectedTowerType(TowerType::Lich))
             .add_systems(Startup, load_towers_sprites)
+            .add_systems(
+                OnEnter(GameState::GameOver),
+                despawn_towers_and_reset_on_game_over,
+            )
             // build systems
             .add_systems(
                 Update,
@@ -23,13 +27,12 @@ impl Plugin for TowersPlugin {
                     setup_tower_zones,
                     buy_and_spawn_tower,
                     upgrade_tower,
-                    delete_all_shots_on_building,
                 )
                     .run_if(in_state(GameState::Building)),),
             )
             .add_systems(
-                Update,
-                reset_hover_color_in_attacking.run_if(in_state(GameState::Attacking)),
+                OnEnter(GameState::Attacking),
+                reset_hover_color_in_attacking,
             )
             // attack systems
             .add_systems(
@@ -40,7 +43,8 @@ impl Plugin for TowersPlugin {
                     despawn_shots_with_killed_target,
                 )
                     .run_if(in_state(GameState::Attacking)),
-            );
+            )
+            .add_systems(OnEnter(GameState::Building), delete_all_shots_on_building);
     }
 }
 
