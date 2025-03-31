@@ -1,4 +1,4 @@
-# 🚧 WORK STILL IN PROGRESS 🚧
+# 🚧 WORK IN PROGRESS 🚧
 
 # Solana Tower Defense
 
