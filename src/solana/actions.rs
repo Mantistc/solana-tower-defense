@@ -1,14 +1,11 @@
-use std::{
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::sync::Arc;
 
 use bevy::prelude::*;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{
     pubkey::Pubkey, signature::Keypair, signer::Signer, system_instruction::transfer,
 };
-use td_program_sdk::{instructions, PLAYER_SEED, PROGRAM_ID};
+use td_program_sdk::{instructions, seeds::PLAYER_SEED, PROGRAM_ID};
 
 use crate::VARIABLES;
 
@@ -24,10 +21,8 @@ pub async fn send_sol(signer: Arc<Keypair>, client: Arc<RpcClient>) -> ActionRes
 pub async fn initialize_player(signer: Arc<Keypair>, client: Arc<RpcClient>) -> ActionResult {
     let signer_pubkey = signer.pubkey();
     let seeds = [PLAYER_SEED, signer_pubkey.as_ref()];
-    let now = SystemTime::now();
-    let last_time_played = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
     let (player, bump) = Pubkey::find_program_address(&seeds, &PROGRAM_ID);
-    let ix = instructions::initialize_player(&player, &signer_pubkey, last_time_played, bump); // need to refac this ix 100%
+    let ix = instructions::initialize_player(&player, &signer_pubkey, bump);
     build_and_send_tx(signer, client, &[ix])
 }
 
