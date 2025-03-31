@@ -4,8 +4,37 @@
 //! This file handles that, so if you want enemies to attack faster, deal more damage, or take more hits,
 //! this is where you make the changes.
 
-use super::{AnimateSprite, EnemyAnimation};
+use crate::tower_building::GameState;
+
+use super::*;
 use bevy::prelude::*;
+
+pub struct EnemiesPlugin;
+
+impl Plugin for EnemiesPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, load_enemy_sprites)
+            .add_systems(
+                Update,
+                (spawn_wave, animate, move_enemies, game_over)
+                    .run_if(in_state(GameState::Attacking)),
+            )
+            .add_systems(
+                Update,
+                wave_control
+                    .after(spawn_wave)
+                    .run_if(in_state(GameState::Building).or(in_state(GameState::Attacking))),
+            )
+            .add_systems(
+                OnEnter(GameState::GameOver),
+                (
+                    despawn_all_enemies_in_game_over,
+                    reset_wave_control_on_game_over,
+                )
+                    .run_if(in_state(GameState::GameOver)),
+            );
+    }
+}
 
 pub const MAX_ENEMIES_PER_WAVE: u8 = 25;
 pub const SPAWN_Y_LOCATION: f32 = 80.0;
@@ -46,7 +75,7 @@ pub fn ideal_time_per_frame() -> Timer {
     Timer::from_seconds(0.1, TimerMode::Repeating)
 }
 
-fn ideal_animation_values() -> EnemyAnimation {
+pub fn ideal_animation_values() -> EnemyAnimation {
     // this is the ideal values of the enemy sprite sheet that all enemy should have
     let standard_enemy_animation = EnemyAnimation {
         walk_up: AnimateSprite {
@@ -77,112 +106,7 @@ pub fn load_enemy_sprites(
     let mut textures: Vec<(Handle<Image>, Handle<TextureAtlasLayout>)> = Vec::new();
     let mut animations: Vec<EnemyAnimation> = Vec::new();
 
-    let columns = 4;
-    let rows = 4;
-    let enemy_list = vec![
-        (
-            "enemies/ohai.png",
-            UVec2::splat(32),
-            columns,
-            rows,
-            ideal_animation_values(),
-        ),
-        (
-            "enemies/micuwa.png",
-            UVec2::splat(32),
-            columns,
-            rows,
-            ideal_animation_values(),
-        ),
-        (
-            "enemies/soldier.png",
-            UVec2::splat(32),
-            8,
-            1,
-            EnemyAnimation::make_all(0, 7, ideal_time_per_frame()),
-        ),
-        (
-            "enemies/orcs.png",
-            UVec2::splat(32),
-            8,
-            1,
-            EnemyAnimation::make_all(0, 7, ideal_time_per_frame()),
-        ),
-        (
-            "enemies/leaf-bug.png",
-            UVec2::splat(64),
-            24,
-            1,
-            EnemyAnimation {
-                walk_up: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    ..default()
-                },
-                walk_down: AnimateSprite {
-                    first: 0,
-                    last: 7,
-                    ..default()
-                },
-                walk_left: AnimateSprite {
-                    first: 16,
-                    last: 23,
-                    ..default()
-                },
-                need_flip: true,
-                ..default()
-            },
-        ),
-        (
-            "enemies/magma-crab.png",
-            UVec2::splat(64),
-            24,
-            1,
-            EnemyAnimation {
-                walk_up: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    ..default()
-                },
-                walk_down: AnimateSprite {
-                    first: 0,
-                    last: 7,
-                    ..default()
-                },
-                walk_left: AnimateSprite {
-                    first: 16,
-                    last: 23,
-                    ..default()
-                },
-                ..default()
-            },
-        ),
-        (
-            "enemies/fire-bug.png",
-            UVec2::new(96, 64),
-            24,
-            1,
-            EnemyAnimation {
-                walk_up: AnimateSprite {
-                    first: 8,
-                    last: 15,
-                    ..default()
-                },
-                walk_down: AnimateSprite {
-                    first: 0,
-                    last: 7,
-                    ..default()
-                },
-                walk_left: AnimateSprite {
-                    first: 16,
-                    last: 23,
-                    ..default()
-                },
-                need_flip: true,
-                ..default()
-            },
-        ),
-    ];
+    let enemy_list = get_enemy_list();
 
     for (path, tile_size, columns, row, animation) in enemy_list {
         let texture = asset_server.load(path);

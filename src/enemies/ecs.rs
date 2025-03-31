@@ -14,36 +14,9 @@ use bevy::prelude::*;
 use crate::tower_building::{GameState, Lifes};
 
 use super::{
-    animate, load_enemy_sprites, EnemyAnimation, EnemyAnimationState, WaveControl,
-    INITIAL_ENEMY_LIFE, MAX_ENEMIES_PER_WAVE, SCALAR, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
+    EnemyAnimation, EnemyAnimationState, WaveControl, INITIAL_ENEMY_LIFE, MAX_ENEMIES_PER_WAVE,
+    SCALAR, SCALE, SPAWN_X_LOCATION, SPAWN_Y_LOCATION,
 };
-
-pub struct EnemiesPlugin;
-
-impl Plugin for EnemiesPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, load_enemy_sprites)
-            .add_systems(
-                Update,
-                (spawn_wave, animate, move_enemies, game_over)
-                    .run_if(in_state(GameState::Attacking)),
-            )
-            .add_systems(
-                Update,
-                wave_control
-                    .after(spawn_wave)
-                    .run_if(in_state(GameState::Building).or(in_state(GameState::Attacking))),
-            )
-            .add_systems(
-                OnEnter(GameState::GameOver),
-                (
-                    despawn_all_enemies_in_game_over,
-                    reset_wave_control_on_game_over,
-                )
-                    .run_if(in_state(GameState::GameOver)),
-            );
-    }
-}
 
 #[derive(Component)]
 pub struct Enemy {
@@ -54,7 +27,7 @@ pub struct Enemy {
 #[derive(Debug, Component, Deref, DerefMut, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BreakPointLvl(pub u8);
 
-fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveControl>) {
+pub fn spawn_wave(mut commands: Commands, time: Res<Time>, mut wave_control: ResMut<WaveControl>) {
     if wave_control.wave_count == wave_control.textures.len() as u8 {
         return;
     }
