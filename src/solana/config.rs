@@ -14,10 +14,8 @@ impl Plugin for SolanaPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SolClient(setup_solana_client()))
             .insert_resource(Wallet::default())
-            .add_systems(
-                Update,
-                (check_balance, update_wallet_balance, process_tx_tasks),
-            );
+            .insert_resource(Tasks::default())
+            .add_systems(Update, (check_balance, process_tx_tasks));
     }
 }
 
