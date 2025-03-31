@@ -154,7 +154,8 @@ pub fn handle_btn_interaction(
     mut game_state: ResMut<NextState<GameState>>,
     mut commands: Commands,
     entities: Query<(Entity, &Name), With<Node>>,
-    mut wallet: ResMut<Wallet>,
+    wallet: ResMut<Wallet>,
+    mut tasks: ResMut<Tasks>,
     client: Res<SolClient>,
 ) {
     for (interaction, mut color, mut border_color, children) in &mut interaction_query {
@@ -187,7 +188,7 @@ pub fn handle_btn_interaction(
                 {
                     let client = client.clone();
                     let signer = wallet.keypair.clone();
-                    wallet.add_task(initialize_player(signer, client));
+                    tasks.add_task(initialize_player(signer, client));
                     game_state.set(GameState::Building);
                     entity_to_despawn = Some(entity);
                 }

@@ -1,5 +1,6 @@
 use std::{
     collections::VecDeque,
+    fmt::Debug,
     future::Future,
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
@@ -9,7 +10,7 @@ use bevy::{
     prelude::*,
     tasks::{block_on, poll_once, AsyncComputeTaskPool, Task},
 };
-use solana_client::rpc_client::RpcClient;
+use solana_client::{client_error::ClientError, rpc_client::RpcClient};
 use solana_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signature},
@@ -26,9 +27,6 @@ use super::*;
 pub struct Wallet {
     pub keypair: Arc<Keypair>,
     pub balance: u64,
-    pub status_delay: Timer,
-    pub balance_task: Option<Task<Result<u64, solana_client::client_error::ClientError>>>,
-    pub transaction_tasks: VecDeque<Task<Result<Signature, String>>>,
 }
 
 impl Default for Wallet {
@@ -36,20 +34,40 @@ impl Default for Wallet {
         Wallet {
             keypair: load_keypair_from_file(),
             balance: 0,
-            status_delay: Timer::from_seconds(5.0, TimerMode::Repeating),
-            balance_task: None,
-            transaction_tasks: VecDeque::new(),
         }
     }
 }
 
-impl Wallet {
+#[derive(Debug)]
+pub enum TaskResult {
+    Balance(u64),
+    Signature(Signature),
+}
+
+pub type ActionResult = Result<TaskResult, ClientError>;
+
+#[derive(Resource, Debug)]
+pub struct Tasks {
+    pub status_delay: Timer,
+    pub pending_tasks: VecDeque<Task<ActionResult>>,
+}
+
+impl Default for Tasks {
+    fn default() -> Self {
+        Self {
+            status_delay: Timer::from_seconds(5.0, TimerMode::Repeating),
+            pending_tasks: VecDeque::new(),
+        }
+    }
+}
+
+impl Tasks {
     pub fn add_task<F>(&mut self, future: F)
     where
-        F: Future<Output = Result<Signature, String>> + Send + 'static,
+        F: Future<Output = ActionResult> + Send + 'static,
     {
         let task = AsyncComputeTaskPool::get().spawn(future);
-        self.transaction_tasks.push_back(task);
+        self.pending_tasks.push_back(task);
     }
 }
 
@@ -74,17 +92,14 @@ pub fn sign_message(wallet: &ResMut<Wallet>) {
     println!("valid signature: {:?}", is_valid_signature);
 }
 
-pub async fn send_sol(signer: Arc<Keypair>, client: Arc<RpcClient>) -> Result<Signature, String> {
+pub async fn send_sol(signer: Arc<Keypair>, client: Arc<RpcClient>) -> ActionResult {
     let to_pubkey = Pubkey::from_str_const(&VARIABLES.payment_wallet);
     let lamports = 100_000_000;
     let ix = transfer(&signer.pubkey(), &to_pubkey, lamports);
     build_and_send_tx(signer, client, &[ix])
 }
 
-pub async fn initialize_player(
-    signer: Arc<Keypair>,
-    client: Arc<RpcClient>,
-) -> Result<Signature, String> {
+pub async fn initialize_player(signer: Arc<Keypair>, client: Arc<RpcClient>) -> ActionResult {
     let signer_pubkey = signer.pubkey();
     let seeds = [PLAYER_SEED, signer_pubkey.as_ref()];
     let now = SystemTime::now();
@@ -94,46 +109,41 @@ pub async fn initialize_player(
     build_and_send_tx(signer, client, &[ix])
 }
 
-pub fn check_balance(mut wallet: ResMut<Wallet>, client: Res<SolClient>, time: Res<Time>) {
-    wallet.status_delay.tick(time.delta());
+pub fn check_balance(
+    wallet: ResMut<Wallet>,
+    mut tasks: ResMut<Tasks>,
+    client: Res<SolClient>,
+    time: Res<Time>,
+) {
+    tasks.status_delay.tick(time.delta());
 
-    if wallet.status_delay.just_finished() && wallet.balance_task.is_none() {
+    if tasks.status_delay.just_finished() {
         let pubkey = wallet.keypair.pubkey();
         let client = client.clone();
 
-        let task = AsyncComputeTaskPool::get().spawn(async move { client.get_balance(&pubkey) });
-
-        wallet.balance_task = Some(task);
+        tasks.add_task(async move { client.get_balance(&pubkey).map(TaskResult::Balance) });
     }
 }
 
-pub fn update_wallet_balance(mut wallet: ResMut<Wallet>) {
-    if let Some(mut task) = wallet.balance_task.take() {
+pub fn process_tx_tasks(mut tasks: ResMut<Tasks>, mut wallet: ResMut<Wallet>) {
+    if let Some(mut task) = tasks.pending_tasks.pop_front() {
         if let Some(result) = block_on(poll_once(&mut task)) {
             match result {
-                Ok(balance) => {
-                    wallet.balance = balance;
-                    info!("wallet balance: {} SOL", wallet.balance);
-                }
-                Err(e) => {
-                    error!("failed to fetch wallet balance: {:?}", e);
+                Ok(tx_result) => match tx_result {
+                    TaskResult::Balance(balance) => {
+                        wallet.balance = balance;
+                        info!("wallet balance updated: {} SOL", balance);
+                    }
+                    TaskResult::Signature(sig) => {
+                        info!("transaction sent, signature: {:?}", sig);
+                    }
+                },
+                Err(err) => {
+                    error!("task failed: {:?}", err);
                 }
             }
         } else {
-            wallet.balance_task = Some(task);
-        }
-    }
-}
-
-pub fn process_tx_tasks(mut wallet_tasks: ResMut<Wallet>) {
-    if let Some(mut task) = wallet_tasks.transaction_tasks.pop_front() {
-        if let Some(result) = block_on(poll_once(&mut task)) {
-            match result {
-                Ok(signature) => info!("tx sent, signature: {:?}", signature),
-                Err(e) => error!("failed to send transaction: {:?}", e),
-            }
-        } else {
-            wallet_tasks.transaction_tasks.push_front(task);
+            tasks.pending_tasks.push_front(task);
         }
     }
 }

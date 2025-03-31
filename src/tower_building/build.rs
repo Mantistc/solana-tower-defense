@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::*;
 
 use crate::{
-    solana::{send_sol, SolClient, Wallet},
+    solana::{send_sol, SolClient, Tasks, Wallet},
     tilemap::TILE_SIZE,
 };
 
@@ -34,8 +34,9 @@ pub fn buy_and_spawn_tower(
     mut gold: ResMut<Gold>,
     selected_tower_type: Res<SelectedTowerType>,
     mut placement_zones: Query<(&Transform, &mut Sprite), With<TowerPlacementZone>>,
-    mut wallet: ResMut<Wallet>,
+    wallet: ResMut<Wallet>,
     sol_client: Res<SolClient>,
+    mut tasks: ResMut<Tasks>,
 ) {
     let window = windows.single();
     let range = 32.0;
@@ -96,10 +97,9 @@ pub fn buy_and_spawn_tower(
                             tower_control.placements[i] = 1;
                             gold.0 -= tower_cost;
                             info!("gold: {:?}", gold.0);
-
                             let client = sol_client.clone();
                             let signer = wallet.keypair.clone();
-                            wallet.add_task(send_sol(signer, client));
+                            tasks.add_task(send_sol(signer, client));
                             break;
                         }
                     }
@@ -153,9 +153,6 @@ pub fn upgrade_tower(
                                     gold.0, tower.attack_damage, tower.attack_speed
                                 );
                             }
-                        }
-                        if gold.0 < tower_cost {
-                            info!("gold: {:?}, cost: {:?}", gold.0, tower_cost);
                         }
                     }
                 }
