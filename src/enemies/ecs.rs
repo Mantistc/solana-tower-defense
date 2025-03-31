@@ -9,9 +9,14 @@
 //!
 //! These processes require separate handling to ensure proper management and scalability.
 
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use bevy::prelude::*;
 
-use crate::tower_building::{GameState, Lifes};
+use crate::{
+    solana::{update_player_values, PlayerInfo, SolClient, Tasks, Wallet},
+    tower_building::{GameState, Lifes},
+};
 
 use super::{
     EnemyAnimation, EnemyAnimationState, WaveControl, INITIAL_ENEMY_LIFE, MAX_ENEMIES_PER_WAVE,
@@ -183,6 +188,12 @@ pub fn wave_control(
     mut wave_control: ResMut<WaveControl>,
     enemies: Query<Entity, With<Enemy>>,
     mut game_state: ResMut<NextState<GameState>>,
+    solana_resources: (
+        ResMut<Tasks>,
+        ResMut<Wallet>,
+        Res<SolClient>,
+        Res<PlayerInfo>,
+    ),
 ) {
     // tick cooldown timer
     wave_control.time_between_waves.tick(time.delta());
@@ -212,6 +223,17 @@ pub fn wave_control(
         if wave_control.time_between_waves.just_finished() {
             wave_control.spawned_count_in_wave = 0;
             wave_control.wave_count += 1;
+            let (mut tasks, signer, client, player_info) = solana_resources;
+            let now = SystemTime::now();
+            let last_time_played = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
+            info!("last_time_played: {}", last_time_played);
+            tasks.add_task(update_player_values(
+                signer.keypair.clone(),
+                client.clone(),
+                wave_control.wave_count,
+                last_time_played,
+                player_info.address,
+            ));
             wave_control.time_between_waves.pause();
             wave_control.time_between_waves.reset();
             game_state.set(GameState::Attacking);

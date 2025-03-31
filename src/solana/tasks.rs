@@ -6,13 +6,15 @@ use bevy::{
 };
 use solana_client::client_error::ClientError;
 use solana_sdk::signature::Signature;
+use td_program_sdk::states::Player;
 
-use super::Wallet;
+use super::{PlayerInfo, Wallet};
 
 #[derive(Debug)]
 pub enum TaskResult {
     Balance(u64),
     Signature(Signature),
+    PlayerData(Player),
 }
 
 pub type ActionResult = Result<TaskResult, ClientError>;
@@ -42,7 +44,11 @@ impl Tasks {
     }
 }
 
-pub fn process_tx_tasks(mut tasks: ResMut<Tasks>, mut wallet: ResMut<Wallet>) {
+pub fn process_tx_tasks(
+    mut tasks: ResMut<Tasks>,
+    mut wallet: ResMut<Wallet>,
+    mut player_data: ResMut<PlayerInfo>,
+) {
     if let Some(mut task) = tasks.pending_tasks.pop_front() {
         if let Some(result) = block_on(poll_once(&mut task)) {
             match result {
@@ -53,6 +59,15 @@ pub fn process_tx_tasks(mut tasks: ResMut<Tasks>, mut wallet: ResMut<Wallet>) {
                     }
                     TaskResult::Signature(sig) => {
                         info!("transaction sent, signature: {:?}", sig);
+                    }
+                    TaskResult::PlayerData(player) => {
+                        player_data.data = player;
+                        let last_time_played =
+                            u64::from_le_bytes(player.last_played.try_into().unwrap_or_default());
+                        info!(
+                            "last time played: {:?}, wave_reached: {}",
+                            last_time_played, player.wave_reached
+                        );
                     }
                 },
                 Err(err) => {
