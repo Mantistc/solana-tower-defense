@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, sync::Arc};
+use std::sync::Arc;
 
 use bevy::prelude::*;
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
@@ -13,13 +13,7 @@ pub struct SolanaPlugin;
 impl Plugin for SolanaPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SolClient(setup_solana_client()))
-            .insert_resource(Wallet {
-                keypair: load_keypair_from_file(),
-                balance: 0,
-                status_delay: Timer::from_seconds(5.0, TimerMode::Repeating),
-                balance_task: None,
-                transaction_tasks: VecDeque::new(),
-            })
+            .insert_resource(Wallet::default())
             .add_systems(
                 Update,
                 (check_balance, update_wallet_balance, process_tx_tasks),

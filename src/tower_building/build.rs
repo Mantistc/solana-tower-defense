@@ -1,4 +1,4 @@
-use bevy::{prelude::*, tasks::AsyncComputeTaskPool};
+use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::*;
 
 use crate::{
@@ -6,7 +6,10 @@ use crate::{
     tilemap::TILE_SIZE,
 };
 
-use super::{Gold, Lifes, SelectedTowerType, TowerControl, TowerType, INITIAL_PLAYER_GOLD, MAX_LIFES, TOWER_POSITION_PLACEMENT};
+use super::{
+    Gold, Lifes, SelectedTowerType, TowerControl, TowerType, INITIAL_PLAYER_GOLD, MAX_LIFES,
+    TOWER_POSITION_PLACEMENT,
+};
 
 #[derive(Debug, Clone)]
 pub struct TowerInfo {
@@ -96,9 +99,7 @@ pub fn buy_and_spawn_tower(
 
                             let client = sol_client.clone();
                             let signer = wallet.keypair.clone();
-                            let task = AsyncComputeTaskPool::get()
-                                .spawn(async move { send_sol(signer, client) });
-                            wallet.transaction_tasks.push_back(task);
+                            wallet.add_task(send_sol(signer, client));
                             break;
                         }
                     }
@@ -236,7 +237,7 @@ pub fn despawn_towers_and_reset_on_game_over(
     mut tower_control: ResMut<TowerControl>,
     mut gold: ResMut<Gold>,
     mut commands: Commands,
-    mut lifes: ResMut<Lifes>
+    mut lifes: ResMut<Lifes>,
 ) {
     for entity in &mut towers {
         commands.entity(entity).despawn();

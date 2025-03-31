@@ -154,7 +154,8 @@ pub fn handle_btn_interaction(
     mut game_state: ResMut<NextState<GameState>>,
     mut commands: Commands,
     entities: Query<(Entity, &Name), With<Node>>,
-    wallet: Res<Wallet>,
+    mut wallet: ResMut<Wallet>,
+    client: Res<SolClient>,
 ) {
     for (interaction, mut color, mut border_color, children) in &mut interaction_query {
         let mut text_color = text_query.get_mut(children[0]).unwrap();
@@ -163,9 +164,10 @@ pub fn handle_btn_interaction(
             Interaction::Pressed => {
                 let mut entity_to_despawn = None;
 
-                if let Some((entity, _)) = entities.iter().find(|(_, name)| {
-                    name.as_str() == "how to play ui" || name.as_str() == "game over"
-                }) {
+                if let Some((entity, _)) = entities
+                    .iter()
+                    .find(|(_, name)| name.as_str() == "game over")
+                {
                     game_state.set(GameState::Building);
                     entity_to_despawn = Some(entity);
                 }
@@ -176,6 +178,17 @@ pub fn handle_btn_interaction(
                 {
                     sign_message(&wallet);
                     game_state.set(GameState::HowToPlay);
+                    entity_to_despawn = Some(entity);
+                }
+
+                if let Some((entity, _)) = entities
+                    .iter()
+                    .find(|(_, name)| name.as_str() == "how to play ui")
+                {
+                    let client = client.clone();
+                    let signer = wallet.keypair.clone();
+                    wallet.add_task(initialize_player(signer, client));
+                    game_state.set(GameState::Building);
                     entity_to_despawn = Some(entity);
                 }
 
