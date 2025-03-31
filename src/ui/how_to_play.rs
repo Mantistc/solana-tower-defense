@@ -2,6 +2,7 @@ use bevy::{
     color::palettes::css::{BLACK, WHITE},
     prelude::*,
 };
+use solana_sdk::signer::Signer;
 
 use crate::{solana::*, tower_building::GameState};
 
@@ -157,6 +158,7 @@ pub fn handle_btn_interaction(
     wallet: ResMut<Wallet>,
     mut tasks: ResMut<Tasks>,
     client: Res<SolClient>,
+    mut player_info: ResMut<PlayerInfo>,
 ) {
     for (interaction, mut color, mut border_color, children) in &mut interaction_query {
         let mut text_color = text_query.get_mut(children[0]).unwrap();
@@ -186,9 +188,10 @@ pub fn handle_btn_interaction(
                     .iter()
                     .find(|(_, name)| name.as_str() == "how to play ui")
                 {
-                    let client = client.clone();
                     let signer = wallet.keypair.clone();
-                    tasks.add_task(initialize_player(signer, client));
+                    let signer_pubkey = signer.pubkey();
+                    let (player, bump) = player_info.set_address(&signer_pubkey);
+                    tasks.add_task(initialize_player(signer, client.clone(), player, bump));
                     game_state.set(GameState::Building);
                     entity_to_despawn = Some(entity);
                 }

@@ -15,7 +15,8 @@ impl Plugin for SolanaPlugin {
         app.insert_resource(SolClient(setup_solana_client()))
             .insert_resource(Wallet::default())
             .insert_resource(Tasks::default())
-            .add_systems(Update, (check_balance, process_tx_tasks));
+            .insert_resource(PlayerInfo::default())
+            .add_systems(Update, (update_onchain_values, process_tx_tasks));
     }
 }
 

@@ -8311,9 +8311,9 @@ dependencies = [
 
 [[package]]
 name = "td-program-sdk"
-version = "0.1.2"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e5cc60a0e44c770303f6bb34146f865916a1a758ade9348f9b1ff8a7673c6fd"
+checksum = "d92cb3c455539e6c3ffb2cffda913e14d29623459c5d929e0ee70ba66c50426c"
 dependencies = [
  "solana-sdk",
 ]
