@@ -10,7 +10,7 @@ use solana_sdk::{
     transaction::VersionedTransaction,
 };
 
-use super::{TaskResult, SEND_CFG};
+use super::*;
 
 pub fn build_and_send_tx(
     signer: Arc<Keypair>,

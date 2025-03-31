@@ -1,7 +1,11 @@
 pub mod config;
-pub mod ecs;
+pub mod wallet;
+pub mod tasks;
 pub mod transactions;
+pub mod actions;
 
-pub use transactions::*;
+pub use actions::*;
 pub use config::*;
-pub use ecs::*;
+pub use wallet::*;
+pub use tasks::*;
+pub use transactions::*;
