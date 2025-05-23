@@ -1,4 +1,4 @@
-# 🚧 WORK IN PROGRESS 🚧
+# Game made for learning purposes :)
 
 # Solana Tower Defense
 
